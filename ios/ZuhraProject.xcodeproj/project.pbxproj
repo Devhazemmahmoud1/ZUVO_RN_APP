@@ -9,9 +9,36 @@
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-ZuhraProject.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-ZuhraProject.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		401A736FFE5C4D3B8D2ED41A /* CairoMedium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EB2A7D7CFE784F68879F406A /* CairoMedium.ttf */; };
+		407997AE9AB14CDFA6C906ED /* MaterialCommunityIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CE2B65961C33418D9CF1B054 /* MaterialCommunityIcons.ttf */; };
+		4324D8842E55438AB81BC0ED /* SimpleLineIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E3DADE76C3D841989735D199 /* SimpleLineIcons.ttf */; };
+		492F5E05E0DC42EA83513861 /* FontAwesome5_Brands.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ADA0476FAE4D456BBEB030E4 /* FontAwesome5_Brands.ttf */; };
+		5126C8116B5346D6BECF106C /* CairoRegular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42501AE623474E728DEB9905 /* CairoRegular.ttf */; };
+		612D5D9935374FC491D8C1D7 /* CairoLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5BA4C425A2FB4C99A18B8961 /* CairoLight.ttf */; };
 		69F0C59AB518A90E6158229E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		75D4D5E19A024BF2A9AE11B6 /* CairoBlack.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 87575E0621EB4C7296546301 /* CairoBlack.ttf */; };
+		760D1C9273A24756B2E55D40 /* FontAwesome5_Solid.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 48C3053C6C5946B9ACB97F74 /* FontAwesome5_Solid.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		7D2E0B7BDF274FF08EF6605B /* FontAwesome.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C75DF8B8BDEA457EBE17E748 /* FontAwesome.ttf */; };
+		7E6F3D320D394A48AB112D58 /* FontAwesome6_Solid.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6101CFAB488F42A2AA841E57 /* FontAwesome6_Solid.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		83B0942417BF4A159F891356 /* CairoExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 23212D89D63B4DAE8E9493C5 /* CairoExtraLight.ttf */; };
+		8830CFE2D8614DFF9A5039FF /* Zocial.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D5086E0B179414A8C917F9F /* Zocial.ttf */; };
+		8ABA96DECD45448DA3608744 /* Octicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DAF716ACAA1E4CD69A29C42B /* Octicons.ttf */; };
+		8B8A934B10584335BB44F77D /* Ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5C28545EE0B54D82B86FAFCE /* Ionicons.ttf */; };
+		92E8A3D42AEA404597D75A92 /* CairoBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 72423F953E6947D288898F15 /* CairoBold.ttf */; };
+		93C1647CC1344EC98CD72BBF /* Fontisto.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B58D033E57CF4B26859DE0F8 /* Fontisto.ttf */; };
+		9472B66D3CA24B14A4393683 /* MaterialIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C53AA8B758EE444BB5EF3179 /* MaterialIcons.ttf */; };
+		9E7C2D81B9B0411BAFDCA735 /* Feather.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7F9FD49DD2F04D7BB40732E5 /* Feather.ttf */; };
+		B3E5F5C6C7224A81B539594E /* Foundation.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FEBCC1F3D17144DBAE0236EF /* Foundation.ttf */; };
+		B5BF7A4AE3C7470C9DCC4CCB /* AntDesign.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2E3540172C524AB4BEC53A9A /* AntDesign.ttf */; };
+		C6CAA986A91E49869E56DE2C /* EvilIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E925C5FF318E45DF82F0E6DF /* EvilIcons.ttf */; };
+		D229994220D8494F86566BB5 /* Entypo.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D493E4B7C8C46688860DD8A /* Entypo.ttf */; };
+		D4F493D309CB49058AC820E1 /* CairoSemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BB96F5881E514766B9AD1369 /* CairoSemiBold.ttf */; };
+		D909E5C354D44555AC247C74 /* CairoExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E77533FE178F46A3BEB64204 /* CairoExtraBold.ttf */; };
+		ED95ECD33C224A3CAA463762 /* FontAwesome5_Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8CE2ECE4E24F432A868B31F8 /* FontAwesome5_Regular.ttf */; };
+		EFE04663E4D144C6ABA2C36A /* FontAwesome6_Brands.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4F54830D8F4422EA39073E9 /* FontAwesome6_Brands.ttf */; };
+		F8DE8EC08D2144818693D9A1 /* FontAwesome6_Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8173EC13A94B4703AE948A5A /* FontAwesome6_Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,12 +46,39 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ZuhraProject/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ZuhraProject/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = ZuhraProject/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		23212D89D63B4DAE8E9493C5 /* CairoExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoExtraLight.ttf; path = ../src/assets/fonts/CairoExtraLight.ttf; sourceTree = "<group>"; };
+		2E3540172C524AB4BEC53A9A /* AntDesign.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = AntDesign.ttf; path = ../src/assets/fonts/AntDesign.ttf; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-ZuhraProject.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZuhraProject.debug.xcconfig"; path = "Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject.debug.xcconfig"; sourceTree = "<group>"; };
+		3D493E4B7C8C46688860DD8A /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = ../src/assets/fonts/Entypo.ttf; sourceTree = "<group>"; };
+		42501AE623474E728DEB9905 /* CairoRegular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoRegular.ttf; path = ../src/assets/fonts/CairoRegular.ttf; sourceTree = "<group>"; };
+		48C3053C6C5946B9ACB97F74 /* FontAwesome5_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Solid.ttf; path = ../src/assets/fonts/FontAwesome5_Solid.ttf; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-ZuhraProject.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZuhraProject.release.xcconfig"; path = "Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject.release.xcconfig"; sourceTree = "<group>"; };
+		5BA4C425A2FB4C99A18B8961 /* CairoLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoLight.ttf; path = ../src/assets/fonts/CairoLight.ttf; sourceTree = "<group>"; };
+		5C28545EE0B54D82B86FAFCE /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = ../src/assets/fonts/Ionicons.ttf; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-ZuhraProject.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ZuhraProject.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6101CFAB488F42A2AA841E57 /* FontAwesome6_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Solid.ttf; path = ../src/assets/fonts/FontAwesome6_Solid.ttf; sourceTree = "<group>"; };
+		72423F953E6947D288898F15 /* CairoBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoBold.ttf; path = ../src/assets/fonts/CairoBold.ttf; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ZuhraProject/AppDelegate.swift; sourceTree = "<group>"; };
+		7D5086E0B179414A8C917F9F /* Zocial.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Zocial.ttf; path = ../src/assets/fonts/Zocial.ttf; sourceTree = "<group>"; };
+		7F9FD49DD2F04D7BB40732E5 /* Feather.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Feather.ttf; path = ../src/assets/fonts/Feather.ttf; sourceTree = "<group>"; };
+		8173EC13A94B4703AE948A5A /* FontAwesome6_Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Regular.ttf; path = ../src/assets/fonts/FontAwesome6_Regular.ttf; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ZuhraProject/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		87575E0621EB4C7296546301 /* CairoBlack.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoBlack.ttf; path = ../src/assets/fonts/CairoBlack.ttf; sourceTree = "<group>"; };
+		8CE2ECE4E24F432A868B31F8 /* FontAwesome5_Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Regular.ttf; path = ../src/assets/fonts/FontAwesome5_Regular.ttf; sourceTree = "<group>"; };
+		ADA0476FAE4D456BBEB030E4 /* FontAwesome5_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Brands.ttf; path = ../src/assets/fonts/FontAwesome5_Brands.ttf; sourceTree = "<group>"; };
+		B4F54830D8F4422EA39073E9 /* FontAwesome6_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Brands.ttf; path = ../src/assets/fonts/FontAwesome6_Brands.ttf; sourceTree = "<group>"; };
+		B58D033E57CF4B26859DE0F8 /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = ../src/assets/fonts/Fontisto.ttf; sourceTree = "<group>"; };
+		BB96F5881E514766B9AD1369 /* CairoSemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoSemiBold.ttf; path = ../src/assets/fonts/CairoSemiBold.ttf; sourceTree = "<group>"; };
+		C53AA8B758EE444BB5EF3179 /* MaterialIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialIcons.ttf; path = ../src/assets/fonts/MaterialIcons.ttf; sourceTree = "<group>"; };
+		C75DF8B8BDEA457EBE17E748 /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = ../src/assets/fonts/FontAwesome.ttf; sourceTree = "<group>"; };
+		CE2B65961C33418D9CF1B054 /* MaterialCommunityIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialCommunityIcons.ttf; path = ../src/assets/fonts/MaterialCommunityIcons.ttf; sourceTree = "<group>"; };
+		DAF716ACAA1E4CD69A29C42B /* Octicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Octicons.ttf; path = ../src/assets/fonts/Octicons.ttf; sourceTree = "<group>"; };
+		E3DADE76C3D841989735D199 /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = SimpleLineIcons.ttf; path = ../src/assets/fonts/SimpleLineIcons.ttf; sourceTree = "<group>"; };
+		E77533FE178F46A3BEB64204 /* CairoExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoExtraBold.ttf; path = ../src/assets/fonts/CairoExtraBold.ttf; sourceTree = "<group>"; };
+		E925C5FF318E45DF82F0E6DF /* EvilIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = EvilIcons.ttf; path = ../src/assets/fonts/EvilIcons.ttf; sourceTree = "<group>"; };
+		EB2A7D7CFE784F68879F406A /* CairoMedium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoMedium.ttf; path = ../src/assets/fonts/CairoMedium.ttf; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		FEBCC1F3D17144DBAE0236EF /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = ../src/assets/fonts/Foundation.ttf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +129,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				EA144E9BC44F43BF9ADC604F /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -96,6 +151,40 @@
 				5709B34CF0A7D63546082F79 /* Pods-ZuhraProject.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		EA144E9BC44F43BF9ADC604F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2E3540172C524AB4BEC53A9A /* AntDesign.ttf */,
+				87575E0621EB4C7296546301 /* CairoBlack.ttf */,
+				72423F953E6947D288898F15 /* CairoBold.ttf */,
+				E77533FE178F46A3BEB64204 /* CairoExtraBold.ttf */,
+				23212D89D63B4DAE8E9493C5 /* CairoExtraLight.ttf */,
+				5BA4C425A2FB4C99A18B8961 /* CairoLight.ttf */,
+				EB2A7D7CFE784F68879F406A /* CairoMedium.ttf */,
+				42501AE623474E728DEB9905 /* CairoRegular.ttf */,
+				BB96F5881E514766B9AD1369 /* CairoSemiBold.ttf */,
+				3D493E4B7C8C46688860DD8A /* Entypo.ttf */,
+				E925C5FF318E45DF82F0E6DF /* EvilIcons.ttf */,
+				7F9FD49DD2F04D7BB40732E5 /* Feather.ttf */,
+				C75DF8B8BDEA457EBE17E748 /* FontAwesome.ttf */,
+				ADA0476FAE4D456BBEB030E4 /* FontAwesome5_Brands.ttf */,
+				8CE2ECE4E24F432A868B31F8 /* FontAwesome5_Regular.ttf */,
+				48C3053C6C5946B9ACB97F74 /* FontAwesome5_Solid.ttf */,
+				B4F54830D8F4422EA39073E9 /* FontAwesome6_Brands.ttf */,
+				8173EC13A94B4703AE948A5A /* FontAwesome6_Regular.ttf */,
+				6101CFAB488F42A2AA841E57 /* FontAwesome6_Solid.ttf */,
+				B58D033E57CF4B26859DE0F8 /* Fontisto.ttf */,
+				FEBCC1F3D17144DBAE0236EF /* Foundation.ttf */,
+				5C28545EE0B54D82B86FAFCE /* Ionicons.ttf */,
+				CE2B65961C33418D9CF1B054 /* MaterialCommunityIcons.ttf */,
+				C53AA8B758EE444BB5EF3179 /* MaterialIcons.ttf */,
+				DAF716ACAA1E4CD69A29C42B /* Octicons.ttf */,
+				E3DADE76C3D841989735D199 /* SimpleLineIcons.ttf */,
+				7D5086E0B179414A8C917F9F /* Zocial.ttf */,
+			);
+			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -142,6 +231,7 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -161,6 +251,33 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				69F0C59AB518A90E6158229E /* PrivacyInfo.xcprivacy in Resources */,
+				B5BF7A4AE3C7470C9DCC4CCB /* AntDesign.ttf in Resources */,
+				75D4D5E19A024BF2A9AE11B6 /* CairoBlack.ttf in Resources */,
+				92E8A3D42AEA404597D75A92 /* CairoBold.ttf in Resources */,
+				D909E5C354D44555AC247C74 /* CairoExtraBold.ttf in Resources */,
+				83B0942417BF4A159F891356 /* CairoExtraLight.ttf in Resources */,
+				612D5D9935374FC491D8C1D7 /* CairoLight.ttf in Resources */,
+				401A736FFE5C4D3B8D2ED41A /* CairoMedium.ttf in Resources */,
+				5126C8116B5346D6BECF106C /* CairoRegular.ttf in Resources */,
+				D4F493D309CB49058AC820E1 /* CairoSemiBold.ttf in Resources */,
+				D229994220D8494F86566BB5 /* Entypo.ttf in Resources */,
+				C6CAA986A91E49869E56DE2C /* EvilIcons.ttf in Resources */,
+				9E7C2D81B9B0411BAFDCA735 /* Feather.ttf in Resources */,
+				7D2E0B7BDF274FF08EF6605B /* FontAwesome.ttf in Resources */,
+				492F5E05E0DC42EA83513861 /* FontAwesome5_Brands.ttf in Resources */,
+				ED95ECD33C224A3CAA463762 /* FontAwesome5_Regular.ttf in Resources */,
+				760D1C9273A24756B2E55D40 /* FontAwesome5_Solid.ttf in Resources */,
+				EFE04663E4D144C6ABA2C36A /* FontAwesome6_Brands.ttf in Resources */,
+				F8DE8EC08D2144818693D9A1 /* FontAwesome6_Regular.ttf in Resources */,
+				7E6F3D320D394A48AB112D58 /* FontAwesome6_Solid.ttf in Resources */,
+				93C1647CC1344EC98CD72BBF /* Fontisto.ttf in Resources */,
+				B3E5F5C6C7224A81B539594E /* Foundation.ttf in Resources */,
+				8B8A934B10584335BB44F77D /* Ionicons.ttf in Resources */,
+				407997AE9AB14CDFA6C906ED /* MaterialCommunityIcons.ttf in Resources */,
+				9472B66D3CA24B14A4393683 /* MaterialIcons.ttf in Resources */,
+				8ABA96DECD45448DA3608744 /* Octicons.ttf in Resources */,
+				4324D8842E55438AB81BC0ED /* SimpleLineIcons.ttf in Resources */,
+				8830CFE2D8614DFF9A5039FF /* Zocial.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,6 +493,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -443,6 +564,10 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
 				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
