@@ -13,8 +13,8 @@ import {
   FlatList,
   ImageSourcePropType,
   Image,
-  PanResponder,
-  LayoutChangeEvent,
+  // PanResponder,
+  // LayoutChangeEvent,
   Pressable,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -25,6 +25,14 @@ import AddressSwitcher from '../Home/component/AddressesSwitcher';
 import { t } from 'i18next';
 import { useLanguage } from '../../LanguageProvider';
 import { useNavigation } from '@react-navigation/native';
+import { useAddReceiver, useGetReceivers } from '../../apis/checkoutApi';
+import LoadingSpinner from '../../components/Loading';
+import ReceiverModal from './components/AddReceiver';
+import { useCart } from '../../apis/cartApis';
+// import SlideToPay from './components/Slider';
+// import TapSlideConfirm from './components/TapToSlider';
+// import DragToConfirm from './components/DragToConfirm';
+import DragToConfirmFixed from './components/DragToConfirm';
 
 const { width: W } = Dimensions.get('window');
 
@@ -41,50 +49,28 @@ const COLORS = {
   danger: '#EF4444',
 };
 
-const SHIPMENT_ITEMS = [
-  {
-    id: '1',
-    brand: 'Apple',
-    title: 'New 2025 MacBook…',
-    price: '3,199.00',
-    light: false,
-    img: require('../../assets/main_logo.png'),
-  },
-  {
-    id: '2',
-    brand: 'Apple',
-    title: 'AirPods Pro',
-    price: '652.50',
-    light: true,
-    img: require('../../assets/main_logo.png'),
-  },
-  {
-    id: '3',
-    brand: 'Apple',
-    title: 'AirPods Pro',
-    price: '652.50',
-    light: true,
-    img: require('../../assets/main_logo.png'),
-  },
-  // add more if needed
-];
-
 const CONTENT_W = W - 24 - 24;
 
 const SHIP_CARD_W = Math.min(CONTENT_W * 0.85, 200);
 
 export default function Checkout() {
   //   const [cvv, setCvv] = useState('');
+  const [openReceiver, setOpenReceiver] = useState(false);
+  const [selectedReceiver, setSelectedReceiver] = useState(0);
   const [leaveAtDoor, setLeaveAtDoor] = useState(false);
   const { effectiveAddress } = useAddressContext();
-  const nav: any = useNavigation()
+  const nav: any = useNavigation();
   const [openAddressSwitcher, setOpenAddressSwitcher] = useState<any>(false);
-  const { isRTL } = useLanguage()
+  const { isRTL } = useLanguage();
   const cancelModel = () => setOpenAddressSwitcher(false);
+  const { data: cart, isPending: fetchingCart } = useCart();
+  const { data: receivers, isPending: fetching } = useGetReceivers();
+  const { mutateAsync: addReceiver, isPending: Adding } = useAddReceiver();
+  const [selectedDate, setSelectedDate] = useState('tomorrow');
+  const [selectedMethod, setSelectedMethod] = useState('cod');
   //   const canContinue = cvv.length >= 3;
 
-  // demo numbers
-  const subtotal = 3851.5;
+  const subtotal = cart.items.reduce((acc, item) => acc + item.lineTotal, 0);
   const shipping = 0;
   const total = useMemo(() => subtotal + shipping, [subtotal, shipping]);
 
@@ -110,14 +96,40 @@ export default function Checkout() {
     return () => anim.stop();
   }, [pinY]);
 
+  const handleCloseModel = () => setOpenReceiver(false);
+
+  const handleAddReceiver = ({ name, phone }) => {
+    addReceiver(
+      {
+        name,
+        phone,
+      },
+      {
+        onSuccess: () => {},
+        onError: () => {},
+      },
+    );
+  };
+
   return (
     <SafeAreaView style={s.screen}>
       {/* Header */}
+      {(fetching || Adding || fetchingCart) && <LoadingSpinner overlay />}
       <View style={s.headerRow}>
-        <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => nav.goBack()}>
-          <Ionicons name="arrow-back" style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }} size={22} color={COLORS.text} />
+        <TouchableOpacity
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          onPress={() => nav.goBack()}
+        >
+          <Ionicons
+            name="arrow-back"
+            style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }}
+            size={22}
+            color={COLORS.text}
+          />
         </TouchableOpacity>
-        <Text style={[s.headerTitle, getCairoFont('700')]}>{t('checkout')}</Text>
+        <Text style={[s.headerTitle, getCairoFont('700')]}>
+          {t('checkout')}
+        </Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -141,8 +153,12 @@ export default function Checkout() {
                 style={s.addressContainer}
                 onPress={() => setOpenAddressSwitcher(true)}
               >
-                <Text numberOfLines={1}
-                style={[s.addrText, getCairoFont('600')]}>{effectiveAddress?.address}</Text>
+                <Text
+                  numberOfLines={1}
+                  style={[s.addrText, getCairoFont('600')]}
+                >
+                  {effectiveAddress?.address}
+                </Text>
               </Pressable>
               {/* <Ionicons name="chevron-forward" size={18} color={COLORS.sub} /> */}
             </TouchableOpacity>
@@ -169,25 +185,26 @@ export default function Checkout() {
             tint
           >
             <View style={s.recipientRow}>
+              {receivers !== undefined &&
+                Array.isArray(receivers) &&
+                receivers.map(res => (
+                  <SelectableChip
+                    key={res.id}
+                    selected={selectedReceiver == res.id ? true : false}
+                    onPress={() => {
+                      if (selectedReceiver == res.id) {
+                        setSelectedReceiver(0);
+                        return;
+                      }
+                      setSelectedReceiver(res.id);
+                    }}
+                    text={res.name}
+                    sub={res.phone}
+                    style={s.half}
+                  />
+                ))}
               <SelectableChip
-                selected
-                text="zukhra khubolo..."
-                sub="+971-52-10513..."
-                style={s.half}
-              />
-              <SelectableChip
-                selected
-                text="zukhra khubolo..."
-                sub="+971-52-10513..."
-                style={s.half}
-              />
-              <SelectableChip
-                selected
-                text="zukhra khubolo..."
-                sub="+971-52-10513..."
-                style={s.half}
-              />
-              <SelectableChip
+                onPress={() => setOpenReceiver(true)}
                 text={t('someoneElse')}
                 icon="call-outline"
                 style={s.half}
@@ -199,16 +216,22 @@ export default function Checkout() {
           <Card
             title={
               <Text style={getCairoFont('600')}>
-                {(t('shipment'))} <Text style={s.muted}> ({t('itemsCount', {
-                  count: 1
-                })})</Text>
+                {t('shipment')}{' '}
+                <Text style={s.muted}>
+                  {' '}
+                  (
+                  {t('itemsCount', {
+                    count: cart.items.length ?? 1,
+                  })}
+                  )
+                </Text>
               </Text>
             }
             // right={<Tag text="express" />}
           >
             {/* Horizontal product list */}
             <FlatList
-              data={SHIPMENT_ITEMS}
+              data={cart.items ?? []}
               keyExtractor={it => it.id}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -217,17 +240,17 @@ export default function Checkout() {
               decelerationRate="fast"
               renderItem={({ item }) => (
                 <View style={s.shipItem}>
-                  <Thumb img={item.img} light={item.light} />
+                  <Thumb img={item.image} light={item.light} />
                   <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={s.brand}>{item.brand}</Text>
                     <Text
                       numberOfLines={1}
                       style={[s.titleSm, getCairoFont('700')]}
                     >
-                      {item.title}
+                      {isRTL ? item.name_ar : item.name_en}
                     </Text>
                     <Text style={[s.price, getCairoFont('800')]}>
-                      {item.price} <DirhamLogo size={12} /> 
+                      {item.lineTotal} <DirhamLogo size={12} />
                     </Text>
                   </View>
                 </View>
@@ -238,7 +261,7 @@ export default function Checkout() {
             <Row gap={8}>
               <Ionicons name="calendar" size={16} color={COLORS.green} />
               <Text style={s.meta}>
-              {t('getIt')}{' '}
+                {t('getIt')}{' '}
                 <Text style={{ color: COLORS.green, fontWeight: '600' }}>
                   {t('tom')}
                 </Text>
@@ -264,8 +287,19 @@ export default function Checkout() {
 
             <View style={{ height: 12 }} />
 
-            <RadioRow label={t('getItTomorrow')} note="+  Đ 18.00" />
-            <RadioRow selected label={t('getItTomorrow')} note={t('free')} noteGreen />
+            <RadioRow
+              selected={selectedDate == 'today'}
+              onPress={() => setSelectedDate('today')}
+              label={t('getItToday')}
+              note="+  Đ 30.00"
+            />
+            <RadioRow
+              selected={selectedDate == 'tomorrow'}
+              onPress={() => setSelectedDate('tomorrow')}
+              label={t('getItTomorrow')}
+              note={t('free')}
+              noteGreen
+            />
           </Card>
 
           {/* ===== Pay With ===== */}
@@ -346,7 +380,7 @@ export default function Checkout() {
             </TouchableOpacity> */}
 
             {/* BNPL + COD */}
-            <MethodRow
+            {/* <MethodRow
               logo="bag-handle-outline"
               name="Tamara"
               desc="Pay 4 interest free payments of 962.88"
@@ -355,37 +389,52 @@ export default function Checkout() {
               logo="card-outline"
               name="Tabby"
               desc="Pay 4 interest free payments of Đ 962.88"
+            /> */}
+            <MethodRow
+              selected={selectedMethod === 'apple' ? true : false}
+              onPress={() => setSelectedMethod('apple')}
+              logo="logo-apple"
+              name={'Apple Pay'}
+              desc={''}
             />
             <MethodRow
+              selected={selectedMethod === 'cod' ? true : false}
+              onPress={() => setSelectedMethod('cod')}
               logo="cash-outline"
-              name="Cash On Delivery"
-              desc="Extra charges may be applied"
+              name={t('cod')}
+              desc={t('extraCharges')}
             />
           </Card>
 
           {/* ===== Order Summary ===== */}
-          <Card title="Order Summary">
+          <Card title={t('orderSummary')}>
             <Row style={{ justifyContent: 'space-between' }}>
               <Text style={s.subtle}>
-                Subtotal <Text style={s.muted}>(2 Items)</Text>
+                {t('subTotal')}{' '}
+                <Text style={s.muted}>
+                  ({t('itemsCount', { count: cart.items.length })})
+                </Text>
               </Text>
               <Text style={s.bold}>
                 <DirhamLogo size={12} /> {subtotal.toLocaleString()}
               </Text>
             </Row>
             <Row style={{ justifyContent: 'space-between', marginTop: 10 }}>
-              <Text style={s.subtle}>Shipping Fee</Text>
-              <Text style={[s.bold, { color: COLORS.green }]}>FREE</Text>
+              <Text style={s.subtle}>{t('shipFee')} </Text>
+              <Text style={[s.bold, { color: COLORS.green }]}>{t('free')}</Text>
             </Row>
 
             <View style={s.hr} />
 
             <Row style={{ justifyContent: 'space-between' }}>
               <Text style={[s.totalLabel, getCairoFont('800')]}>
-                Total <Text style={s.muted}>(Incl. VAT)</Text>
+                {t('total')} <Text style={s.muted}>({t('incVat')})</Text>
               </Text>
               <Text style={[s.totalVal, getCairoFont('900')]}>
-                <DirhamLogo size={13} /> {total.toLocaleString()}
+                <DirhamLogo size={13} />{' '}
+                {selectedDate == 'today'
+                  ? (Number(total) + 30).toLocaleString()
+                  : total.toLocaleString()}
               </Text>
             </Row>
 
@@ -435,26 +484,44 @@ export default function Checkout() {
 
         {/* Sticky CVV bar + totals row */}
         <View style={s.sticky}>
-          <SlideToPay
-            label="ENTER CVV"
-            style={s.slider} // gives it a top margin inside the footer
+        <View style={s.sliderContainer}>
+        <DragToConfirmFixed
+            label={t('slideToOrder')}
+            travelPx={Math.min(Dimensions.get('window').width * 0.88, 360)} // responsive width
+            requireFullEnd
+            direction={isRTL ? 'rtl' : 'ltr'}   // <— key line
             onComplete={() => {
-              // fire your action here (e.g., navigate, submit, etc.)
-              console.log('Slide complete!');
+              console.log("Order confirmed");
+              // call your mutation here
             }}
           />
 
+
           <Row style={s.footerTotals}>
-            <Text style={[s.muted, getCairoFont('700')]}>2 Items</Text>
+            <Text style={[s.muted, getCairoFont('700')]}>
+              {t('itemsCount', {
+                count: cart.items.length,
+              })}
+            </Text>
             <Text style={[s.footerTotal, getCairoFont('900')]}>
-              <DirhamLogo size={12} /> {total.toLocaleString()}
+              <DirhamLogo size={12} />{' '}
+              {selectedDate == 'today'
+                ? (Number(total) + 30).toLocaleString()
+                : total.toLocaleString()}
             </Text>
           </Row>
+          </View>
         </View>
       </View>
       <AddressSwitcher
         openAddressSwitcher={openAddressSwitcher}
         cancel={cancelModel}
+      />
+
+      <ReceiverModal
+        visible={openReceiver}
+        onClose={handleCloseModel}
+        onAdd={handleAddReceiver}
       />
     </SafeAreaView>
   );
@@ -502,13 +569,15 @@ function Row({
   children,
   gap = 6,
   style,
+  onPress,
 }: {
   children: React.ReactNode;
   gap?: number;
   style?: any;
+  onPress?: any;
 }) {
   return (
-    <View style={[{ flexDirection: 'row' }, style]}>
+    <Pressable onPress={onPress} style={[{ flexDirection: 'row' }, style]}>
       {React.Children.map(children, (c, i) => (
         <View
           style={{
@@ -518,7 +587,7 @@ function Row({
           {c}
         </View>
       ))}
-    </View>
+    </Pressable>
   );
 }
 
@@ -564,7 +633,11 @@ function Thumb({ img, light }: { img?: ImageSourcePropType; light?: boolean }) {
       ]}
     >
       {img ? (
-        <Image source={img} style={s.thumbImg} resizeMode="cover" />
+        <Image
+          source={{ uri: img as any }}
+          style={s.thumbImg}
+          resizeMode="contain"
+        />
       ) : null}
     </View>
   );
@@ -576,15 +649,20 @@ function SelectableChip({
   sub,
   icon,
   style,
+  onPress,
 }: {
   selected?: boolean;
   text: string;
   sub?: string;
   icon?: string;
   style?: any;
+  onPress?: any;
 }) {
   return (
-    <View style={[s.selChip, selected && s.selChipSel, style]}>
+    <Pressable
+      style={[s.selChip, selected && s.selChipSel, style]}
+      onPress={onPress}
+    >
       <View
         style={{
           flexDirection: 'row',
@@ -608,7 +686,7 @@ function SelectableChip({
       {selected ? (
         <Ionicons name="checkmark-circle" size={18} color={COLORS.blue} />
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -637,23 +715,30 @@ function MethodRow({
   logo,
   name,
   desc,
+  onPress,
+  selected,
 }: {
   logo: string;
   name: string;
   desc: string;
+  onPress?: any;
+  selected?: boolean;
 }) {
   return (
-    <View style={s.methodRow}>
-      <Row gap={10} style={{ alignItems: 'center' }}>
+    <Pressable
+      style={[s.methodRow, selected ? s.methodRowActive : undefined]}
+      onPress={() => console.log('this is pressed')}
+    >
+      <Row gap={10} style={{ alignItems: 'center' }} onPress={onPress}>
         <View style={s.logoBox}>
           <Ionicons name={logo} size={16} color={COLORS.text} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[s.payTitle, getCairoFont('800')]}>{name}</Text>
-          <Text style={s.muted}>{desc}</Text>
+          {desc != '' && <Text style={s.muted}>{desc}</Text>}
         </View>
       </Row>
-    </View>
+    </Pressable>
   );
 }
 
@@ -662,11 +747,13 @@ function RadioRow({
   label,
   note,
   noteGreen,
+  onPress,
 }: {
   selected?: boolean;
   label: string;
   note?: string;
   noteGreen?: boolean;
+  onPress?: any;
 }) {
   return (
     <Row
@@ -675,8 +762,9 @@ function RadioRow({
         justifyContent: 'space-between',
         paddingVertical: 8,
       }}
+      onPress={onPress}
     >
-      <Row gap={8} style={{ alignItems: 'center' }}>
+      <Row gap={8} style={{ alignItems: 'center' }} onPress={onPress}>
         <Ionicons
           name={selected ? 'radio-button-on' : 'radio-button-off'}
           size={18}
@@ -703,112 +791,118 @@ function RadioRow({
   );
 }
 
-function clamp(n: number, min: number, max: number) {
-  'worklet';
-  return Math.max(min, Math.min(n, max));
-}
+// function clamp(n: number, min: number, max: number) {
+//   'worklet';
+//   return Math.max(min, Math.min(n, max));
+// }
 
-export function SlideToPay({
-  label = 'ENTER CVV',
-  onComplete,
-  disabled = false,
-  style,
-}: {
-  label?: string;
-  onComplete?: () => void;
-  disabled?: boolean;
-  style?: any;
-}) {
-  const HANDLE = 40;
-  const TRACK_H = 56;
-  const PADDING = 8;
+// export function SlideToPay({
+//   label = 'Slide To Order',
+//   onComplete,
+//   disabled = false,
+//   style,
+// }: {
+//   label?: string;
+//   onComplete?: () => void;
+//   disabled?: boolean;
+//   style?: any;
+// }) {
+//   const HANDLE = 40;
+//   const TRACK_H = 56;
+//   const PADDING = 8;
 
-  const [trackW, setTrackW] = useState(0);
-  const maxX = Math.max(0, trackW - HANDLE - PADDING * 2);
+//   const [trackW, setTrackW] = useState(0);
+//   const maxX = Math.max(0, trackW - HANDLE - PADDING * 2);
 
-  const x = useRef(new Animated.Value(0)).current;
-  const startX = useRef(0); // <-- remember where we were when the drag starts
+//   const x = useRef(new Animated.Value(0)).current;
+//   const startX = useRef(0); // <-- remember where we were when the drag starts
 
-  const pan = useRef(
-    PanResponder.create({
-      // Grab the gesture early and prefer horizontal motion.
-      onStartShouldSetPanResponder: () => !disabled,
-      onStartShouldSetPanResponderCapture: () => !disabled,
-      onMoveShouldSetPanResponder: (_e, g) =>
-        !disabled && (Math.abs(g.dx) > 3 || Math.abs(g.dx) > Math.abs(g.dy)),
-      onMoveShouldSetPanResponderCapture: (_e, g) =>
-        !disabled && Math.abs(g.dx) > Math.abs(g.dy),
+//   const pan = useRef(
+//     PanResponder.create({
+//       // Grab the gesture early and prefer horizontal motion.
+//       onStartShouldSetPanResponder: () => !disabled,
+//       onStartShouldSetPanResponderCapture: () => !disabled,
+//       onMoveShouldSetPanResponder: (_e, g) =>
+//         !disabled && (Math.abs(g.dx) > 3 || Math.abs(g.dx) > Math.abs(g.dy)),
+//       onMoveShouldSetPanResponderCapture: (_e, g) =>
+//         !disabled && Math.abs(g.dx) > Math.abs(g.dy),
 
-      onPanResponderGrant: () => {
-        // lock the current position as the gesture baseline
-        x.stopAnimation(v => {
-          startX.current = v;
-        });
-      },
+//       onPanResponderGrant: () => {
+//         // lock the current position as the gesture baseline
+//         x.stopAnimation(v => {
+//           startX.current = v;
+//         });
+//       },
 
-      onPanResponderMove: (_e, g) => {
-        const nx = clamp(startX.current + g.dx, 0, maxX);
-        x.setValue(nx);
-      },
+//       onPanResponderMove: (_e, g) => {
+//         const nx = clamp(startX.current + g.dx, 0, maxX);
+//         x.setValue(nx);
+//       },
 
-      onPanResponderRelease: () => {
-        x.stopAnimation((val: number) => {
-          if (val >= maxX * 0.9) {
-            Animated.timing(x, {
-              toValue: maxX,
-              duration: 120,
-              useNativeDriver: false,
-            }).start(() => onComplete?.());
-          } else {
-            Animated.spring(x, {
-              toValue: 0,
-              bounciness: 6,
-              useNativeDriver: false,
-            }).start();
-          }
-        });
-      },
-      onPanResponderTerminationRequest: () => false,
-    }),
-  ).current;
+//       onPanResponderRelease: () => {
+//         x.stopAnimation((val: number) => {
+//           if (val >= maxX * 0.9) {
+//             Animated.timing(x, {
+//               toValue: maxX,
+//               duration: 120,
+//               useNativeDriver: false,
+//             }).start(() => onComplete?.());
+//           } else {
+//             Animated.spring(x, {
+//               toValue: 0,
+//               bounciness: 6,
+//               useNativeDriver: false,
+//             }).start();
+//           }
+//         });
+//       },
+//       onPanResponderTerminationRequest: () => false,
+//     }),
+//   ).current;
 
-  const onLayoutTrack = (e: LayoutChangeEvent) =>
-    setTrackW(e.nativeEvent.layout.width);
+//   const onLayoutTrack = (e: LayoutChangeEvent) =>
+//     setTrackW(e.nativeEvent.layout.width);
 
-  return (
-    <View
-      style={[s.track, { height: TRACK_H }, style]}
-      onLayout={onLayoutTrack}
-      collapsable={false} // make sure onLayout always fires
-    >
-      {/* Center label; never blocks touches */}
-      <Text pointerEvents="none" style={s.label}>
-        {label}
-      </Text>
+//   return (
+//     <View
+//       style={[s.track, { height: TRACK_H }, style]}
+//       onLayout={onLayoutTrack}
+//       collapsable={false} // make sure onLayout always fires
+//     >
+//       {/* Center label; never blocks touches */}
+//       <Text pointerEvents="none" style={s.label}>
+//         {label}
+//       </Text>
 
-      {/* Draggable handle */}
-      <Animated.View
-        {...pan.panHandlers}
-        style={[
-          s.handle,
-          {
-            left: PADDING,
-            top: (TRACK_H - HANDLE) / 2,
-            transform: [{ translateX: x }],
-          },
-        ]}
-      >
-        <Ionicons name="arrow-forward" size={20} color="#fff" />
-      </Animated.View>
-    </View>
-  );
-}
+//       {/* Draggable handle */}
+//       <Animated.View
+//         {...pan.panHandlers}
+//         style={[
+//           s.handle,
+//           {
+//             left: PADDING,
+//             top: (TRACK_H - HANDLE) / 2,
+//             transform: [{ translateX: x }],
+//           },
+//         ]}
+//       >
+//         <Ionicons name="arrow-forward" size={20} color="tomato" />
+//       </Animated.View>
+//     </View>
+//   );
+// }
 
 /* ---------- Styles ---------- */
 const s = StyleSheet.create({
+  sliderContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    marginBottom: 10, // spacing above totals
+  },
   screen: { flex: 1, backgroundColor: COLORS.bg },
   addressContainer: {
-    width: '100%'
+    width: '100%',
   },
   headerRow: {
     flexDirection: 'row',
@@ -973,7 +1067,7 @@ const s = StyleSheet.create({
     paddingVertical: 2,
   },
   tinyBadgeTxt: { color: COLORS.blue, fontSize: 10 },
-  payTitle: { color: COLORS.text },
+  payTitle: { color: COLORS.text, textAlign: 'left' },
   cardInner: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -1010,6 +1104,10 @@ const s = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderColor: COLORS.line,
+  },
+  methodRowActive: {
+    borderWidth: 2,
+    borderColor: 'tomato',
   },
   logoBox: {
     width: 28,
@@ -1148,7 +1246,7 @@ const s = StyleSheet.create({
   thumbImg: { width: '100%', height: '100%' },
   track: {
     borderRadius: 16,
-    backgroundColor: '#E9EBF1',
+    backgroundColor: 'tomato',
     overflow: 'hidden',
     position: 'relative',
     justifyContent: 'center',
@@ -1156,7 +1254,7 @@ const s = StyleSheet.create({
   },
   label: {
     alignSelf: 'center',
-    color: '#B9C0CC',
+    color: '#fff',
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1165,7 +1263,7 @@ const s = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#2D6CB5',
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1179,7 +1277,7 @@ const s = StyleSheet.create({
     paddingBottom: Platform.select({ ios: 10, android: 6 }),
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    zIndex: 50,
+    zIndex: 1050,
     elevation: 8,
   },
 

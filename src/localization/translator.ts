@@ -143,13 +143,15 @@ export const resources = {
         leaveAtMyDoor: 'Leave at my door',
         whoWillReceive: 'Who will receive this order?',
         someoneElse: 'Someone else',
-        shipment: 'Shipment ({{ count }} Items)',
+        shipment: 'Shipment',
         freeDeliveryTop: '',
         getItToday: 'Get it today',
         getItTomorrow: 'Get it tomorrow',
         payWith: 'Pay With',
         orderSummary: 'Order Summary',
-        itemsCount: '{{ count }} Items'
+        itemsCount: '{{ count }} Items',
+        extraCharges: "Extra charges may be applied",
+        cod: 'Cash On Delivery'
       },
     },
     ar: {
@@ -302,7 +304,9 @@ export const resources = {
         getItTomorrow: 'استلمها غدآ',
         payWith: 'ادفع بواسطه',
         orderSummary: 'بيانات الطلب',
-        itemsCount: '{{ count }} منتج'
+        itemsCount: '{{ count }} منتج',
+        extraCharges: "سيتم اضافه بعض الرسوم",
+        cod: 'الدفع عند الاستلام'
       },
     },
   } as const;
