@@ -1,5 +1,5 @@
 export const fetchPlaceDetails = async (placeId: string) => {
-    const GOOGLE_API_KEY = 'AIzaSyC7R9XUNbveBlLbWP1oi42rqR0ZHw65Jmw';
+    const GOOGLE_API_KEY = 'AIzaSyC2sPSPqlLgcegq13849hl7GT5cb8OSEvk';
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
     try {
       const response = await fetch(url);

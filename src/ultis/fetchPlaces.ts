@@ -1,6 +1,6 @@
 export const fetchAutocompletePredictions = async (input: string) => {
 
-    const GOOGLE_API_KEY = 'AIzaSyC7R9XUNbveBlLbWP1oi42rqR0ZHw65Jmw'
+    const GOOGLE_API_KEY = 'AIzaSyC2sPSPqlLgcegq13849hl7GT5cb8OSEvk'
 
     if (!input) return [];
     const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(

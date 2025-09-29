@@ -1,5 +1,5 @@
 export async function getPlaceName(latitude, longitude) {
-    const apiKey = 'AIzaSyC7R9XUNbveBlLbWP1oi42rqR0ZHw65Jmw'; // replace with your key
+    const apiKey = 'AIzaSyC2sPSPqlLgcegq13849hl7GT5cb8OSEvk'; // replace with your key
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
   
     try {
