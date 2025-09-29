@@ -3,8 +3,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import qs from 'qs'
+import { Platform } from 'react-native';
 
-const BASE_URL = 'http://localhost:4000'; // change this
+const BASE_URL = Platform.select({
+      ios: 'http://localhost:4000',   // iOS simulator -> Mac host
+      android: 'http://10.0.2.2:4000' // Android emulator -> Mac host
+})! // change this
 
 // Create the Axios instance
 const axiosInstance = axios.create({

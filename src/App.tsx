@@ -45,7 +45,6 @@ export default function App() {
     });
 
     GoogleSignin.configure({
-      // webClientId: '105183099704-21iiv48k048har93qj8srf6cq33du8b2.apps.googleusercontent.com',
       webClientId:
         '105183099704-fo6367oq8q2erlulsmmmh8o42ac430b4.apps.googleusercontent.com', // from Google Console (type = Web)
       iosClientId:

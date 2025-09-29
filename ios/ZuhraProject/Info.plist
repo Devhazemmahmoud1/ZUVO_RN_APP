@@ -20,6 +20,26 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+		<!-- <key>GMSApiKey</key>
+	<string>AIzaSyC2sPSPqlLgcegq13849hl7GT5cb8OSEvk</string> -->
+	<key>CFBundleURLTypes</key>
+	<array>
+	<dict>
+		<key>CFBundleTypeRole</key>
+		<string>Editor</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+		<string>com.googleusercontent.apps.105183099704-oc0rkcfn0bro6mfuofc5tfasqlu29nf8</string>
+		</array>
+	</dict>
+	</array>
+
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+	<string>google</string>
+	<string>com.google</string>
+	</array>
+
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
