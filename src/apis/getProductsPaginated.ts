@@ -42,7 +42,7 @@ export function useProductsInfinite(params: ProductsParams = {}) {
   const stable = useMemo(
     () =>
       clean({
-        limit: params.limit ?? 20,
+        limit: params.limit ?? 5,
         sortBy: params.sortBy ?? "newest",
         ...params,
       }),
@@ -55,6 +55,7 @@ export function useProductsInfinite(params: ProductsParams = {}) {
   return useInfiniteQuery<ApiResponse>({
     queryKey: ["products", stable],
     initialPageParam: 1,
+    refetchOnWindowFocus: 'always',
     refetchOnMount: 'always',       // ⬅️ force a refetch when screen mounts
     refetchOnReconnect: 'always',
     // ⬇️ Add robust debug + cancel-awareness
@@ -86,12 +87,11 @@ export function useProductsInfinite(params: ProductsParams = {}) {
     },
   
     // Keep previous pages visible when fetching next
-    placeholderData: (prev) => prev,
+    // placeholderData: (prev) => prev,
 
     // sensible timings (ms)
     staleTime: 0,        // 30s fresh
     gcTime: 5 * 60 * 1000,
-    retry: 0,                 // disable while debugging
-    refetchOnWindowFocus: false,
+    retry: 2,                 // disable while debugging
   });
 }

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C80B921A6F3F58F76C31292 /* libPods-ZuhraProject.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-ZuhraProject.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		401A736FFE5C4D3B8D2ED41A /* CairoMedium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EB2A7D7CFE784F68879F406A /* CairoMedium.ttf */; };
 		407997AE9AB14CDFA6C906ED /* MaterialCommunityIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CE2B65961C33418D9CF1B054 /* MaterialCommunityIcons.ttf */; };
@@ -16,6 +15,7 @@
 		5126C8116B5346D6BECF106C /* CairoRegular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42501AE623474E728DEB9905 /* CairoRegular.ttf */; };
 		612D5D9935374FC491D8C1D7 /* CairoLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5BA4C425A2FB4C99A18B8961 /* CairoLight.ttf */; };
 		69F0C59AB518A90E6158229E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		6F823DCF38C4E6021979CE28 /* libPods-ZuhraProject.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AE754930C1EC18669F8C916 /* libPods-ZuhraProject.a */; };
 		75D4D5E19A024BF2A9AE11B6 /* CairoBlack.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 87575E0621EB4C7296546301 /* CairoBlack.ttf */; };
 		760D1C9273A24756B2E55D40 /* FontAwesome5_Solid.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 48C3053C6C5946B9ACB97F74 /* FontAwesome5_Solid.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
@@ -42,20 +42,19 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1374C85DB7DCA55FC6CED012 /* Pods-ZuhraProject.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZuhraProject.debug.xcconfig"; path = "Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* ZuhraProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZuhraProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ZuhraProject/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ZuhraProject/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = ZuhraProject/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		23212D89D63B4DAE8E9493C5 /* CairoExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoExtraLight.ttf; path = ../src/assets/fonts/CairoExtraLight.ttf; sourceTree = "<group>"; };
 		2E3540172C524AB4BEC53A9A /* AntDesign.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = AntDesign.ttf; path = ../src/assets/fonts/AntDesign.ttf; sourceTree = "<group>"; };
-		3B4392A12AC88292D35C810B /* Pods-ZuhraProject.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZuhraProject.debug.xcconfig"; path = "Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject.debug.xcconfig"; sourceTree = "<group>"; };
 		3D493E4B7C8C46688860DD8A /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = ../src/assets/fonts/Entypo.ttf; sourceTree = "<group>"; };
 		42501AE623474E728DEB9905 /* CairoRegular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoRegular.ttf; path = ../src/assets/fonts/CairoRegular.ttf; sourceTree = "<group>"; };
 		48C3053C6C5946B9ACB97F74 /* FontAwesome5_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Solid.ttf; path = ../src/assets/fonts/FontAwesome5_Solid.ttf; sourceTree = "<group>"; };
-		5709B34CF0A7D63546082F79 /* Pods-ZuhraProject.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZuhraProject.release.xcconfig"; path = "Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject.release.xcconfig"; sourceTree = "<group>"; };
+		5AE754930C1EC18669F8C916 /* libPods-ZuhraProject.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ZuhraProject.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BA4C425A2FB4C99A18B8961 /* CairoLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoLight.ttf; path = ../src/assets/fonts/CairoLight.ttf; sourceTree = "<group>"; };
 		5C28545EE0B54D82B86FAFCE /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = ../src/assets/fonts/Ionicons.ttf; sourceTree = "<group>"; };
-		5DCACB8F33CDC322A6C60F78 /* libPods-ZuhraProject.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ZuhraProject.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6101CFAB488F42A2AA841E57 /* FontAwesome6_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Solid.ttf; path = ../src/assets/fonts/FontAwesome6_Solid.ttf; sourceTree = "<group>"; };
 		72423F953E6947D288898F15 /* CairoBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoBold.ttf; path = ../src/assets/fonts/CairoBold.ttf; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ZuhraProject/AppDelegate.swift; sourceTree = "<group>"; };
@@ -65,6 +64,7 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ZuhraProject/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		87575E0621EB4C7296546301 /* CairoBlack.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = CairoBlack.ttf; path = ../src/assets/fonts/CairoBlack.ttf; sourceTree = "<group>"; };
 		8CE2ECE4E24F432A868B31F8 /* FontAwesome5_Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Regular.ttf; path = ../src/assets/fonts/FontAwesome5_Regular.ttf; sourceTree = "<group>"; };
+		9F873E820965633A13BE841C /* Pods-ZuhraProject.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ZuhraProject.release.xcconfig"; path = "Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject.release.xcconfig"; sourceTree = "<group>"; };
 		ADA0476FAE4D456BBEB030E4 /* FontAwesome5_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Brands.ttf; path = ../src/assets/fonts/FontAwesome5_Brands.ttf; sourceTree = "<group>"; };
 		B4F54830D8F4422EA39073E9 /* FontAwesome6_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Brands.ttf; path = ../src/assets/fonts/FontAwesome6_Brands.ttf; sourceTree = "<group>"; };
 		B58D033E57CF4B26859DE0F8 /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = ../src/assets/fonts/Fontisto.ttf; sourceTree = "<group>"; };
@@ -86,7 +86,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C80B921A6F3F58F76C31292 /* libPods-ZuhraProject.a in Frameworks */,
+				6F823DCF38C4E6021979CE28 /* libPods-ZuhraProject.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,7 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5DCACB8F33CDC322A6C60F78 /* libPods-ZuhraProject.a */,
+				5AE754930C1EC18669F8C916 /* libPods-ZuhraProject.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -147,8 +147,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3B4392A12AC88292D35C810B /* Pods-ZuhraProject.debug.xcconfig */,
-				5709B34CF0A7D63546082F79 /* Pods-ZuhraProject.release.xcconfig */,
+				1374C85DB7DCA55FC6CED012 /* Pods-ZuhraProject.debug.xcconfig */,
+				9F873E820965633A13BE841C /* Pods-ZuhraProject.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -194,13 +194,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "ZuhraProject" */;
 			buildPhases = (
-				C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */,
+				E62DAAA3E4B787A34B7C8FED /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
-				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				25F6799AFA53A5599566FB55 /* [CP] Embed Pods Frameworks */,
+				0F046D526A7A6AD7ED0D3C86 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -300,7 +300,24 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
+		0F046D526A7A6AD7ED0D3C86 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		25F6799AFA53A5599566FB55 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -317,7 +334,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
+		E62DAAA3E4B787A34B7C8FED /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -339,23 +356,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ZuhraProject/Pods-ZuhraProject-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -372,14 +372,19 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-ZuhraProject.debug.xcconfig */;
+			baseConfigurationReference = 1374C85DB7DCA55FC6CED012 /* Pods-ZuhraProject.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"RCT_NEW_ARCH_ENABLED=1",
+					"RCT_FABRIC_ENABLED=0",
+				);
 				INFOPLIST_FILE = ZuhraProject/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -400,13 +405,18 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-ZuhraProject.release.xcconfig */;
+			baseConfigurationReference = 9F873E820965633A13BE841C /* Pods-ZuhraProject.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"RCT_NEW_ARCH_ENABLED=1",
+					"RCT_FABRIC_ENABLED=0",
+				);
 				INFOPLIST_FILE = ZuhraProject/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

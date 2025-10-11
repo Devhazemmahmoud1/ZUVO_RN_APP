@@ -62,9 +62,6 @@ export function useCart() {
     queryKey: CART_QK,
     queryFn: async () => {
       const { data } = await axiosInstance.get('/api/cart');
-
-      console.log('this is the data cart', data);
-
       return data;
     },
     staleTime: 15_000,
@@ -125,7 +122,6 @@ export function useSetCartItemQty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ itemId, qty }: { itemId: number; qty: number }) => {
-      console.log('itemId', itemId, 'qty:', qty);
       const data = await apiRequest({
         method: 'patch',
         path: `/api/cart/items/${itemId}`,

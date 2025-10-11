@@ -29,6 +29,7 @@ import { haversineMeters } from '../../ultis/haversine';
 import { t } from 'i18next';
 import { useLanguage } from '../../LanguageProvider';
 import EmptyCart from './components/EmptyCart';
+import CartSkeleton from './components/CartSkeleton';
 
 const { width: W } = Dimensions.get('window');
 
@@ -51,7 +52,6 @@ export default function Cart() {
   const { mutate: addToCart, isPending: adding } = useAddToCart();
   const { data: wishlist, isPending: isWishlistPending } = useWishlist();
   const [locationIsFar, setLocationIsFar] = useState(false);
-  console.log(cart);
   const { isRTL } = useLanguage();
 
   const { effectiveAddress } = useAddressContext();
@@ -90,8 +90,6 @@ export default function Cart() {
         },
       );
 
-      console.log(distance);
-
       if (distance >= 500) {
         console.log('it is far');
         setLocationIsFar(true);
@@ -102,15 +100,41 @@ export default function Cart() {
     });
   }, [effectiveAddress]);
 
+  const hasCartData = Array.isArray(cart?.items);
+  const hasWishlistData = Array.isArray(wishlist?.items);
+  const cartItems = hasCartData ? (cart?.items as any[]) : [];
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.lineTotal, 0);
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  const to2 = (n: number) => Math.round(n * 100) / 100;
+
+  const initialLoading =
+    (!hasCartData && isPending) || (!hasWishlistData && isWishlistPending);
+  const overlayLoading =
+    (isPending && hasCartData) ||
+    (isWishlistPending && hasWishlistData) ||
+    adding;
+
+  if (initialLoading) {
+    return (
+      <SafeAreaView style={s.screen}>
+        <CartSkeleton />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={s.screen}>
       {/* ===== Header row ===== */}
-      {(isPending || isWishlistPending || adding) && <LoadingSpinner overlay />}
+      {overlayLoading && <LoadingSpinner overlay />}
       <View style={s.topRow}>
         <Text style={[s.cartTitle, getCairoFont('600')]}>
           {t('cart')}{' '}
           <Text style={[s.cart, getCairoFont('600')]}>
-            ({t('items', { count: cart?.items?.length })})
+            ({t('items', { count: cartItems.length })})
           </Text>
         </Text>
         <TouchableOpacity
@@ -119,14 +143,16 @@ export default function Cart() {
           activeOpacity={0.9}
         >
           <Ionicons name="heart-outline" size={18} color={COLORS.text} />
-          <Text style={s.wishlistTxt}>{t('wishlist')}</Text>
+          <Text style={[s.wishlistTxt, getCairoFont('700')]}>
+            {t('wishlist')}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* ===== Address pill ===== */}
       <Pressable style={s.address} onPress={() => setOpenAddressSwitcher(true)}>
         <Ionicons name="location-sharp" size={18} color={COLORS.text} />
-        <Text numberOfLines={1} style={s.addrTxt}>
+        <Text numberOfLines={1} style={[s.addrTxt, getCairoFont('600')]}>
           <Text style={{ fontWeight: '800' }}></Text>{' '}
           {effectiveAddress?.address}
         </Text>
@@ -141,7 +167,11 @@ export default function Cart() {
         >
           <View style={s.noticeNotch} />
           <Text
-            style={[s.noticeTxt, { textAlign: isRTL ? 'left' : undefined }]}
+            style={[
+              s.noticeTxt,
+              getCairoFont('700'),
+              { textAlign: isRTL ? 'left' : undefined },
+            ]}
           >
             {t('farAway')}{' '}
             <Text style={s.noticeLink}>{t('changeAddress')}</Text>
@@ -170,10 +200,14 @@ export default function Cart() {
               color={COLORS.main}
               style={{ marginLeft: isRTL ? 5 : 0 }}
             />
-            <Text style={s.sectionTitle}>{t('easyReturn')}</Text>
+            <Text style={[s.sectionTitle, getCairoFont('800')]}>
+              {t('easyReturn')}
+            </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={s.hideDetails}>{t('hideDetails')}</Text>
+            <Text style={[s.hideDetails, getCairoFont('700')]}>
+              {t('hideDetails')}
+            </Text>
             <Ionicons name="chevron-up" size={16} color={COLORS.sub} />
           </View>
         </View>
@@ -183,8 +217,8 @@ export default function Cart() {
           {/* continuous tomato rail */}
           <View style={s.rail} pointerEvents="none" />
 
-          {cart?.items && cart.items.length > 0 ? (
-            cart.items.map((it, idx) => (
+          {cartItems.length > 0 ? (
+            cartItems.map((it, idx) => (
               <CartItem
                 key={it.id}
                 item={it}
@@ -201,61 +235,64 @@ export default function Cart() {
 
         <WishlistRail
           title={t('fromYourWish')}
-          items={(wishlist && wishlist?.items) || []}
+          items={wishlist?.items ?? []}
           onViewAll={() => navigation.navigate('WishList')}
           onPressItem={it => console.log('open', it.id)}
           onAddToCart={it => handleAddCart(it)}
         />
 
+        {cartItems.length > 0 && (
         <View style={s.cartTotals}>
           <CartTotals
-            itemCount={cart?.items?.length}
-            subtotal={
-              cart?.items?.reduce((sum, i) => sum + i.lineTotal, 0) || 0
-            }
+            itemCount={cartItems.length}
+            subtotal={cartTotal}
             shippingFee="FREE"
-            total={cart?.items?.reduce((sum, i) => sum + i.lineTotal, 0) || 0}
+            total={cartTotal}
             cashbackAmount={192.58}
             onApplyCoupon={code => console.log('apply coupon', code)}
             onViewDiscounts={() => console.log('view discounts')}
             onApplyCard={() => console.log('apply card')}
           />
         </View>
+        )}
       </ScrollView>
 
       {/* ===== Sticky Checkout Bar ===== */}
-      <Pressable style={s.checkoutWrap} onPress={makeCheckout}>
-        <View style={s.checkoutBar}>
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-            }}
-          >
-            <Text style={[s.itemsCount, getCairoFont('500')]}>
-              {t('items', { count: cart?.items?.length })}
-            </Text>
-            <Text style={s.total}>
-              {isRTL ? 'د' : <DirhamLogo size={12} color={'#fff'} />}{' '}
-              {cart?.items?.reduce((sum, i) => sum + i.lineTotal, 0) || 0}
-            </Text>
-          </View>
-          <Text style={[s.checkoutTxt, getCairoFont('600')]}>
-            {t('checkoutCAP')}
-          </Text>
-          <View style={s.totalWrap}>
+      {cartItems.length > 0 && (
+        <Pressable style={s.checkoutWrap} onPress={makeCheckout}>
+          <View style={s.checkoutBar}>
             <View
-              style={[
-                s.arrowBtn,
-                { transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] },
-              ]}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+              }}
             >
-              <Ionicons name="arrow-forward" size={18} color={COLORS.blue} />
+              <Text style={[s.itemsCount, getCairoFont('500')]}>
+                {t('items', { count: cartItems.length })}
+              </Text>
+              <Text style={[s.total, getCairoFont('900')]}>
+                {isRTL ? 'د' : <DirhamLogo size={12} color={'#fff'} />}{' '}
+                {fmt(to2(cartTotal))}
+              </Text>
+            </View>
+            <Text style={[s.checkoutTxt, getCairoFont('800')]}>
+              {t('checkoutCAP')}
+            </Text>
+            <View style={s.totalWrap}>
+              <View
+                style={[
+                  s.arrowBtn,
+                  { transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] },
+                ]}
+              >
+                <Ionicons name="arrow-forward" size={18} color={'#fff'} />
+              </View>
             </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      )}
+
       <AddressSwitcher
         openAddressSwitcher={openAddressSwitcher}
         cancel={cancelModel}
@@ -294,6 +331,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     backgroundColor: '#FFF',
+    gap: 6,
   },
   wishlistTxt: { marginLeft: 6, fontWeight: '700', color: COLORS.text },
 
@@ -302,7 +340,9 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.line,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -318,6 +358,8 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 10,
+    marginHorizontal: 16,
+    borderRadius: 12,
   },
   noticeNotch: {
     position: 'absolute',
@@ -339,6 +381,9 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.line,
   },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
   hideDetails: { color: COLORS.sub, fontWeight: '700' },
@@ -350,7 +395,7 @@ const s = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 30,
+    width: 26,
     backgroundColor: COLORS.main,
     alignItems: 'center',
     justifyContent: 'center',
@@ -363,14 +408,19 @@ const s = StyleSheet.create({
   },
 
   itemCard: {
-    marginLeft: 30, // leave space for rail
-    marginRight: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    marginLeft: 26, // leave space for rail
+    marginRight: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: COLORS.card,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: COLORS.line,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   itemRow: { flexDirection: 'row' },
   thumbBox: {
@@ -488,13 +538,18 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   checkoutBar: {
-    width: W - 70,
-    backgroundColor: COLORS.blue,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    width: W - 32,
+    backgroundColor: 'tomato',
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   itemsCount: { color: '#fff', fontWeight: '800' },
   checkoutTxt: {
@@ -511,8 +566,8 @@ const s = StyleSheet.create({
   arrowBtn: {
     width: 34,
     height: 34,
-    borderRadius: 5,
-    backgroundColor: COLORS.card,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },

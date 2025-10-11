@@ -27,6 +27,7 @@ import { useAddToCart, useCart, useRemoveCartItem, useSetCartItemQty } from '../
 import { useCartIndex } from '../../apis/cartApis';
 import LoadingSpinner from '../../components/Loading';
 import { useAuth } from '../../AuthContext';
+import SingleProductSkeleton from './components/SingleProductSkeleton';
 
 const { width: W } = Dimensions.get('window');
 
@@ -63,7 +64,7 @@ export default function SingleProduct({ route }) {
 
   const navigation: any = useNavigation();
 
-  const { data, isPending } = useProduct(
+  const { data, isPending }: any = useProduct(
     route.params.productId.toString(),
   );
   const { user } = useAuth();
@@ -84,11 +85,15 @@ export default function SingleProduct({ route }) {
 
   console.log('this is the cart', cart)
 
-  const item = cart.items.find((item) => item.productId === data?.data.id)?.id
+  const cartItems = cart?.items ?? [];
+  const cartLineId = cartItems.find(line => line.productId === data?.data.id)?.id;
 
-  console.log('cart item', item)
+  console.log('cart item', cartLineId)
 
   const { isRTL } = useLanguage();
+  const hasStock = typeof data?.data?.stock !== 'undefined' && data?.data?.stock !== null;
+  const stock = hasStock ? Number(data?.data?.stock) : Infinity;
+  const isOutOfStock = hasStock ? stock <= 0 : false;
   // scroll + back-to-top pill
   const y = useRef(new Animated.Value(0)).current;
   const showToTop = y.interpolate({
@@ -125,6 +130,9 @@ export default function SingleProduct({ route }) {
   };
 
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      return;
+    }
     if (!user) {
       navigation.navigate('Authentication', {
         params: {
@@ -155,6 +163,11 @@ export default function SingleProduct({ route }) {
   };
 
   const handleIncreaseQuantity = () => {
+    // Prevent increasing beyond stock or when no stock
+    if (Number.isFinite(stock) && stock > 0 && qty >= stock) {
+      return;
+    }
+    if (isOutOfStock) return;
 
     if (!user) {
       navigation.navigate('Authentication', {
@@ -165,13 +178,20 @@ export default function SingleProduct({ route }) {
       return;
     }
 
-    if (typeof data?.data.id !== 'undefined' && cartIndex[data?.data.id]) {
-        updateQty({
-          itemId: item,
-          qty: qty + 1
-        }, {
-          onSuccess: () => setQty(qty + 1)
-        })
+    if (
+      typeof data?.data.id !== 'undefined' &&
+      cartIndex[data?.data.id] &&
+      cartLineId
+    ) {
+      updateQty(
+        {
+          itemId: cartLineId,
+          qty: qty + 1,
+        },
+        {
+          onSuccess: () => setQty(qty + 1),
+        },
+      );
 
       return
     } else {
@@ -192,24 +212,34 @@ export default function SingleProduct({ route }) {
       return;
     }
 
-    if (typeof data?.data.id !== 'undefined' && cartIndex[data?.data.id]) {
-      if ((cartIndex[data?.data.id].qty - 1) <= 0) {
-        removeItem({
-          itemId: item
-        }, {
-          onSuccess: () => {
-            setQty(Math.max(1, qty - 1))
-          }
-        })
+    if (
+      typeof data?.data.id !== 'undefined' &&
+      cartIndex[data?.data.id] &&
+      cartLineId
+    ) {
+      if (cartIndex[data?.data.id].qty - 1 <= 0) {
+        removeItem(
+          {
+            itemId: cartLineId,
+          },
+          {
+            onSuccess: () => {
+              setQty(Math.max(1, qty - 1));
+            },
+          },
+        );
       } else {
-        updateQty({
-          itemId: item,
-          qty: qty - 1
-        },{
-          onSuccess: () => {
-            setQty(Math.max(1, qty - 1))
-          }
-        })
+        updateQty(
+          {
+            itemId: cartLineId,
+            qty: qty - 1,
+          },
+          {
+            onSuccess: () => {
+              setQty(Math.max(1, qty - 1));
+            },
+          },
+        );
       }
     } else {
       setQty(Math.max(1, qty - 1))
@@ -220,9 +250,22 @@ export default function SingleProduct({ route }) {
   // const unit = 99;
   // const subtotal = useMemo(() => qty * unit, [qty, unit]);
 
+  const isInitialLoading = (isPending || fetching) && !data?.data;
+
+  if (isInitialLoading) {
+    return <SingleProductSkeleton />;
+  }
+
+  const overlayLoading =
+    (isPending && data && !!data?.data) ||
+    (fetching && !!cart) ||
+    updating ||
+    addCart ||
+    removing;
+
   return (
     <View style={s.screen}>
-      {(isPending || updating || addCart || removing) && <LoadingSpinner overlay />}
+      {overlayLoading && <LoadingSpinner overlay />}
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <SafeTopArea edges={['top']} style={{ backgroundColor: '#fff' }}>
         <View style={s.topBar}>
@@ -528,10 +571,14 @@ export default function SingleProduct({ route }) {
               />
             </Row>
           </View>
-          {data &&
-          data.data &&
-          cartIndex[data?.data.id] &&
-          cartIndex[data?.data.id].qty > 0 ? (
+          {isOutOfStock ? (
+            <View style={s.oos}>
+              <Text style={[s.oosTxt, getCairoFont('900')]}>OUT OF STOCK</Text>
+            </View>
+          ) : data &&
+            data.data &&
+            cartIndex[data?.data.id] &&
+            cartIndex[data?.data.id].qty > 0 ? (
             <TouchableOpacity style={s.inCart} activeOpacity={0.92}>
               <Text style={[s.inCartTxt, getCairoFont('900')]}>
                 {t('inCart')}
@@ -542,7 +589,7 @@ export default function SingleProduct({ route }) {
               style={s.cta}
               activeOpacity={0.92}
               onPress={handleAddToCart}
-              disabled={addCart || updating || removing}
+              disabled={addCart || updating || removing || isOutOfStock}
             >
               <Text style={[s.ctaTxt, getCairoFont('900')]}>
                 {t('addToCart')}
@@ -735,13 +782,13 @@ function HList({ data }: { data: MiniProduct[] }) {
           <View style={s.prodImgWrap}>
             <Image source={item.img} style={s.prodImg} resizeMode="contain" />
             <TouchableOpacity style={s.floatHeart}>
-              <Ionicons
+              {/* <Ionicons
                 name={
                   wishIndex.has(Number(item.id)) ? 'heart' : 'heart-outline'
                 }
                 size={16}
                 color={wishIndex.has(Number(item.id)) ? COLORS.text : 'tomato'}
-              />
+              /> */}
             </TouchableOpacity>
             <TouchableOpacity style={s.floatCart}>
               <Ionicons name="cart-outline" size={16} color={COLORS.text} />
@@ -936,17 +983,19 @@ function Step({
   onPress,
   icon,
   isPending,
+  disabled,
 }: {
   onPress: () => void;
   icon: 'add' | 'remove' | 'ban-outline';
   isPending: any;
+  disabled?: boolean;
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       style={s.step}
       activeOpacity={0.8}
-      disabled={isPending}
+      disabled={isPending || disabled || icon === 'ban-outline'}
     >
       <Ionicons
         name={icon}
@@ -1251,6 +1300,19 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   ctaTxt: { color: '#fff', fontSize: 16 },
+  oos: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#EF4444',
+  },
+  oosTxt: {
+    color: '#EF4444',
+    fontSize: 16,
+  },
   inCartTxt: {
     color: 'tomato',
     fontSize: 16,

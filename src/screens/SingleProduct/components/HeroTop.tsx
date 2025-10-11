@@ -16,6 +16,7 @@ import { t } from 'i18next';
 import { useAddWishlist, useRemoveWishlist, useWishlistIndex } from '../../../apis/wishlistApi';
 import { useAuth } from '../../../AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 const { width: W } = Dimensions.get('window');
 
@@ -56,6 +57,14 @@ export default function HeroTop({
     () => (images && images.length ? images : [PLACEHOLDER]),
     [images]
   );
+
+  // 1-second skeleton loader for hero images and thumbnails
+  const [imgLoading, setImgLoading] = React.useState(true);
+  React.useEffect(() => {
+    setImgLoading(true);
+    const t = setTimeout(() => setImgLoading(false), 1000);
+    return () => clearTimeout(t);
+  }, [dataImages]);
 
   React.useEffect(() => {
     if (!dataImages.length) return;
@@ -164,71 +173,89 @@ export default function HeroTop({
       </View>
 
       {/* --- HERO CAROUSEL --- */}
-      <FlatList
-        ref={sliderRef}
-        data={dataImages}
-        keyExtractor={(_, i) => `s${i}`}
-        horizontal
-        pagingEnabled
-        nestedScrollEnabled
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        style={{ height: 332 }} // ensure it grabs touch area
-        renderItem={({ item }) => (
-          <View style={s.slide}>
-            <Image source={item} style={s.heroImage} resizeMode="contain" />
-          </View>
-        )}
-        onMomentumScrollEnd={e => {
-          const i = Math.round(e.nativeEvent.contentOffset.x / W);
-          if (i !== index) setIndex(i);
-        }}
+      {imgLoading ? (
+        <SkeletonPlaceholder borderRadius={12}>
+          <SkeletonPlaceholder.Item height={332} width={W} />
+        </SkeletonPlaceholder>
+      ) : (
+        <FlatList
+          ref={sliderRef}
+          data={dataImages}
+          keyExtractor={(_, i) => `s${i}`}
+          horizontal
+          pagingEnabled
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          style={{ height: 332 }} // ensure it grabs touch area
+          renderItem={({ item }) => (
+            <View style={s.slide}>
+              <Image source={item} style={s.heroImage} resizeMode="contain" />
+            </View>
+          )}
+          onMomentumScrollEnd={e => {
+            const i = Math.round(e.nativeEvent.contentOffset.x / W);
+            if (i !== index) setIndex(i);
+          }}
 
-        onScrollToIndexFailed={({ index: i }) => {
-          setTimeout(() => {
-            const clamped = Math.min(Math.max(i, 0), dataImages.length - 1);
-            sliderRef.current?.scrollToIndex({ index: clamped, animated: true });
-          }, 50);
-        }}
+          onScrollToIndexFailed={({ index: i }) => {
+            setTimeout(() => {
+              const clamped = Math.min(Math.max(i, 0), dataImages.length - 1);
+              sliderRef.current?.scrollToIndex({ index: clamped, animated: true });
+            }, 50);
+          }}
 
 
-        getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
-      />
+          getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
+        />
+      )}
 
       {/* Thumbnails */}
       <View style={s.thumbRow}>
-        <FlatList
-          ref={thumbRef}
-          data={dataImages}
-          keyExtractor={(_, i) => `t${i}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.thumbRow}
-          renderItem={({ item, index: i }) => (
-            <TouchableOpacity
-              style={s.thumbWrap}
-              onPress={() => goTo(i)}
-              activeOpacity={0.9}
-            >
-              <Image
-                source={item}
-                resizeMode="contain"
-                style={[s.thumbSmall, i === index && s.thumbSmallActive]}
-              />
-            </TouchableOpacity>
-          )}
-          getItemLayout={(_, i) => ({
-            length: THUMB_ITEM_W,
-            offset: THUMB_ITEM_W * i,
-            index: i,
-          })}
-    onScrollToIndexFailed={({ index: i }) => {
-      setTimeout(() => {
-        const clamped = Math.min(Math.max(i, 0), dataImages.length - 1);
-        thumbRef.current?.scrollToIndex({ index: clamped, animated: true, viewPosition: 0.5 });
-      }, 50);
-    }}
-        />
+        {imgLoading ? (
+          <SkeletonPlaceholder borderRadius={8}>
+            <SkeletonPlaceholder.Item flexDirection="row">
+              <SkeletonPlaceholder.Item width={56} height={56} marginRight={12} />
+              <SkeletonPlaceholder.Item width={56} height={56} marginRight={12} />
+              <SkeletonPlaceholder.Item width={56} height={56} marginRight={12} />
+              <SkeletonPlaceholder.Item width={56} height={56} marginRight={12} />
+              <SkeletonPlaceholder.Item width={56} height={56} />
+            </SkeletonPlaceholder.Item>
+          </SkeletonPlaceholder>
+        ) : (
+          <FlatList
+            ref={thumbRef}
+            data={dataImages}
+            keyExtractor={(_, i) => `t${i}`}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.thumbRow}
+            renderItem={({ item, index: i }) => (
+              <TouchableOpacity
+                style={s.thumbWrap}
+                onPress={() => goTo(i)}
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={item}
+                  resizeMode="contain"
+                  style={[s.thumbSmall, i === index && s.thumbSmallActive]}
+                />
+              </TouchableOpacity>
+            )}
+            getItemLayout={(_, i) => ({
+              length: THUMB_ITEM_W,
+              offset: THUMB_ITEM_W * i,
+              index: i,
+            })}
+      onScrollToIndexFailed={({ index: i }) => {
+        setTimeout(() => {
+          const clamped = Math.min(Math.max(i, 0), dataImages.length - 1);
+          thumbRef.current?.scrollToIndex({ index: clamped, animated: true, viewPosition: 0.5 });
+        }, 50);
+      }}
+          />
+        )}
       </View>
     </View>
   );

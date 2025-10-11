@@ -49,6 +49,8 @@ export default function CartItem({
     const { isRTL } = useLanguage()
 
     const getOldPrice = () => item.unitPrice / (1 - item.discountPct / 100)
+    const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const to2 = (n: number) => Math.round(n * 100) / 100;
 
     const handleAddQty = () => {
       if (!user) {
@@ -120,10 +122,10 @@ export default function CartItem({
   
             {/* price row */}
             <View style={s.priceRow}>
-              <Text style={s.price}><Text>{isRTL ? 'د' : <DirhamLogo size={12} />}</Text> {item.unitPrice.toLocaleString()}</Text>
+              <Text style={s.price}><Text>{isRTL ? 'د' : <DirhamLogo size={12} />}</Text> {fmt(to2(item.unitPrice))}</Text>
               {item.discountPct ? (
                 <>
-                  <Text style={s.oldPrice}> {getOldPrice()}</Text>
+                  <Text style={s.oldPrice}> {fmt(to2(getOldPrice()))}</Text>
                   <Text style={s.off}>
                     {' '}
                     {item.discountPct}% {t('off')}

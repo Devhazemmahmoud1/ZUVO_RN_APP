@@ -18,19 +18,24 @@ import { GradientBg } from '../../../icons/BG';
 import { getCairoFont } from '../../../ultis/getFont';
 // import { HeartIcon } from '../../../icons/Heart';
 import CyclingPlaceholder from './CyclePlaceholder';
-import { useWishlist } from '../../../apis/wishlistApi';
 import { useNavigation } from '@react-navigation/native';
 import { getCurrentPosition } from '../../../ultis/getCurrentLocation';
 import { haversineMeters } from '../../../ultis/haversine';
 import { useAddressContext } from '../../../AddressProvider';
 import { t } from 'i18next';
+import { useAuth } from '../../../AuthContext';
+
+type Props = {
+  setOpenAddressSwitcher: React.Dispatch<React.SetStateAction<boolean>>;
+  wishlistCount?: number;
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TILE = 74;
 
 type Tile = { id: string; label: string; bg: string; fg?: string };
 const TILES: Tile[] = [
-  { id: 'noon', label: t('app'), bg: 'tomato', fg: '#fff' },
+  { id: 'zuvo', label: 'Zuvo', bg: 'tomato', fg: '#fff' },
   { id: 'mall', label: 'Cars', bg: '#F6F7FB', fg: '#3B3BE0' },
   { id: 'food', label: 'Services', bg: '#FFFFFF', fg: '#111' },
   { id: '15', label: 'B2B', bg: '#FFF3F3', fg: '#D93025' },
@@ -43,16 +48,17 @@ const TILES: Tile[] = [
 //   onSearch?: (q: string) => void;
 // };
 
-export default function HomeHeader({ setOpenAddressSwitcher }) {
+export default function HomeHeader({ setOpenAddressSwitcher, wishlistCount = 0 }: Props) {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const navigation: any = useNavigation();
   const [locationIsFar, setLocationIsFar] = useState(false);
 
+  const { user } = useAuth();
+
   const {
-    // addresses,
-    // activeSelection,
-    effectiveAddress
+    effectiveAddress,
+    refreshCurrentLocation,
   } = useAddressContext();
 
   // const isActive = (a: any) =>
@@ -67,8 +73,6 @@ export default function HomeHeader({ setOpenAddressSwitcher }) {
   const CONTENT_BOTTOM_SPACE = SEARCH_H + SEARCH_GAP + 8; // reserve space for absolute search row
   const HEADER_MIN = 180; // base height of header area (tweak)
 
-  const { data: wishlist } = useWishlist();
-
   const stars = useMemo(
     () =>
       Array.from({ length: 28 }, (_, i) => ({
@@ -82,8 +86,12 @@ export default function HomeHeader({ setOpenAddressSwitcher }) {
   );
 
   useEffect(() => {
-    getCurrentPosition().then(res => {
+    if (!effectiveAddress) {
+      refreshCurrentLocation();
+      return;
+    }
 
+    getCurrentPosition().then(res => {
       const distance = haversineMeters(
         {
           lat: res.lat,
@@ -91,23 +99,23 @@ export default function HomeHeader({ setOpenAddressSwitcher }) {
         },
         {
           lat: effectiveAddress?.lat as any,
-          lng: effectiveAddress?.lng as any
+          lng: effectiveAddress?.lng as any,
         },
       );
 
-      console.log(distance);
-
       if (distance >= 500) {
-        console.log('it is far')
         setLocationIsFar(true);
       } else {
-        console.log('it not far')
         setLocationIsFar(false);
       }
     });
-  }, [effectiveAddress]);
+  }, [effectiveAddress, refreshCurrentLocation]);
 
-  const onChangeAddress = () => setOpenAddressSwitcher(true)
+  const onChangeAddress = () => {
+    if (!user) return;
+    setOpenAddressSwitcher(true);
+  };
+  const displayedAddress = effectiveAddress?.address ?? '...';
 
   return (
     <View style={styles.wrapper}>
@@ -147,20 +155,26 @@ export default function HomeHeader({ setOpenAddressSwitcher }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tilesRow}
           >
-            {TILES.map(t => (
-              <TouchableOpacity
-                key={t.id}
-                activeOpacity={0.8}
-                style={[styles.tile, { backgroundColor: t.bg }]}
-              >
-                <Text
-                  style={[styles.tileText, { color: t.fg ?? '#111' }]}
-                  numberOfLines={2}
+            {TILES.map(t => {
+              // Ensure first tab (Zuvo) label stays white over tomato background
+              const forceWhite = t.id === 'zuvo' || String(t.bg).toLowerCase() === 'tomato';
+              const textColor = forceWhite ? '#fff' : (t.fg ?? '#111');
+
+              return (
+                <TouchableOpacity
+                  key={t.id}
+                  activeOpacity={0.8}
+                  style={[styles.tile, { backgroundColor: t.bg }]}
                 >
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[styles.tileText, { color: textColor }]}
+                    numberOfLines={2}
+                  >
+                    {t.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
           {/* Location row */}
@@ -170,7 +184,7 @@ export default function HomeHeader({ setOpenAddressSwitcher }) {
               <Text style={styles.locBold}>{t('default')}</Text>
               <Text>
               {" "}-{" "}
-                {effectiveAddress?.address}
+                {displayedAddress}
               </Text>
             </Text>
             <Ionicons name="chevron-down" size={18} color="#fff" />
@@ -225,10 +239,18 @@ export default function HomeHeader({ setOpenAddressSwitcher }) {
           /> */}
           <TouchableOpacity
             style={[styles.iconBtn, { height: SEARCH_H, width: SEARCH_H }]}
-            onPress={() => navigation.navigate('WishList')}
+            onPress={() => {
+              if (!user) {
+                navigation.navigate('Authentication', {
+                  params: { redirectBack: 'WishList' },
+                });
+                return;
+              }
+              navigation.navigate('WishList');
+            }}
           >
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{wishlist?.count || 0}</Text>
+              <Text style={styles.badgeText}>{wishlistCount}</Text>
             </View>
             <Ionicons name={'heart-outline'} size={18} color={'#1F2937'} />
           </TouchableOpacity>
@@ -246,7 +268,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     overflow: 'hidden',
-    backgroundColor: '#2A5B8F'
+    backgroundColor: '#2A5B8F',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   content: {
     // paddingTop / paddingBottom set inline above using insets & constants
@@ -274,7 +301,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   iconBtn: {
-    borderRadius: 12,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     marginLeft: 10,
     alignItems: 'center',
@@ -292,6 +319,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 12,
     alignItems: 'center',
+    gap: 4,
   },
   tile: {
     width: TILE,
@@ -305,20 +333,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: RNStyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
+    overflow: 'hidden',
   },
   tileText: {
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 18,
+    letterSpacing: 0.2,
   },
 
   /* Location */
   locRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginTop: 10,
+    marginHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   locText: { flex: 1, color: '#fff', fontSize: 14, marginHorizontal: 6 },
   locBold: { fontWeight: '700' },
@@ -341,6 +377,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   bannerText: { flex: 1, color: '#fff', fontSize: 13, textAlign: 'left' },
   bannerLink: {

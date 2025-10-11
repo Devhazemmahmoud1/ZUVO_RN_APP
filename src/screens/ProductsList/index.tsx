@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  ActivityIndicator,
   FlatList,
   Dimensions,
 } from 'react-native';
@@ -26,6 +25,9 @@ import { useProductsInfinite } from '../../apis/getProductsPaginated';
 import LoadingSpinner from '../../components/Loading';
 import { useAuth } from '../../AuthContext';
 import { useLanguage } from '../../LanguageProvider';
+import ProductListSkeleton, {
+  ProductListNextPageSkeleton,
+} from '../../components/ProductsSkeletons';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const OUTER_PADDING = 8; // matches contentContainerStyle padding
@@ -44,11 +46,14 @@ export default function ProductsList({ route }) {
 
   const { isRTL } = useLanguage();
 
+  const screenParams = route?.params?.params ?? {};
+  const selectedSubCategoryId = screenParams.subCategoryId;
+
   const [selectedValues, setSelectedValues] = React.useState<any>([
     {
       car_brand: [],
       product_brand: [],
-      category: route.params.params.categoryId,
+      category: screenParams.categoryId,
       price: [],
       item_condition: [],
     },
@@ -58,7 +63,10 @@ export default function ProductsList({ route }) {
     const s = selectedValues[0] ?? {};
     return {
       categoryId: s.category ?? '',
-      subCategoryId: [route.params?.params?.subCategoryId] ?? '',
+      subCategoryId:
+        selectedSubCategoryId !== undefined && selectedSubCategoryId !== null
+          ? [selectedSubCategoryId]
+          : undefined,
       brandId: s.product_brand ?? [],
       make: s.car_brand ?? [],
       minPrice: Number.isFinite(s?.price?.[0]) ? s.price[0] : undefined,
@@ -68,7 +76,7 @@ export default function ProductsList({ route }) {
       limit: 20,
       search: search || '',
     };
-  }, [selectedValues, search, route.params?.params?.subCategoryId]);
+  }, [selectedValues, search, selectedSubCategoryId]);
 
   const {
     data,
@@ -79,6 +87,8 @@ export default function ProductsList({ route }) {
     hasNextPage,
     refetch,
   } = useProductsInfinite(params as any);
+
+  const pageSize = params.limit ?? 20;
 
   const items = useMemo(
     () => (data?.pages ?? []).flatMap((p: any) => p?.data ?? []),
@@ -127,52 +137,41 @@ export default function ProductsList({ route }) {
       </View>
 
       <Text style={styles.sectionTitle}>
-        {isRTL
-          ? route.params?.params.subCategoryName_ar
-          : route.params?.params?.subCategoryName_en}{' '}
+        {isRTL ? screenParams.subCategoryName_ar : screenParams.subCategoryName_en}{' '}
       </Text>
 
       {/* Soft gray background restored */}
       <View style={{ flex: 1, backgroundColor: '#f2f2f2', paddingTop: 0 }}>
-        {isLoading && items.length === 0 ? (
-          <View
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <ActivityIndicator />
-          </View>
-        ) : (
-          <FlatList
-            contentContainerStyle={{
-              padding: OUTER_PADDING,
-              paddingBottom: 120,
-            }}
-            data={items}
-            key={currentLayout}
-            keyExtractor={item => String(item.id)}
-            numColumns={2}
-            columnWrapperStyle={{
-              justifyContent: 'space-between',
-              marginBottom: COLUMN_GAP,
-            }}
-            renderItem={({ item }) => (
-              <Products
-                item={item}
-                layout={currentLayout}
-                cardWidth={CARD_WIDTH}
-                user={user}
-              />
-            )}
-            onEndReached={onEnd}
-            onEndReachedThreshold={0.4}
-            ListFooterComponent={
-              isFetchingNextPage ? (
-                <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-                  <ActivityIndicator />
-                </View>
-              ) : null
-            }
-          />
-        )}
+        <FlatList
+          contentContainerStyle={{
+            padding: OUTER_PADDING,
+            paddingBottom: 120,
+          }}
+          data={items}
+          key={currentLayout}
+          keyExtractor={item => String(item.id)}
+          numColumns={2}
+          columnWrapperStyle={{
+            justifyContent: 'space-between',
+            marginBottom: COLUMN_GAP,
+          }}
+          renderItem={({ item }) => (
+            <Products
+              item={item}
+              layout={currentLayout}
+              cardWidth={CARD_WIDTH}
+              user={user}
+            />
+          )}
+          onEndReached={onEnd}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            isFetchingNextPage && items.length > 0 ? (
+              <ProductListNextPageSkeleton count={pageSize} />
+            ) : null
+          }
+          ListEmptyComponent={isLoading ? ProductListSkeleton : null}
+        />
       </View>
 
       {/* Sort/Filter */}
@@ -198,7 +197,7 @@ export default function ProductsList({ route }) {
         </TouchableOpacity>
       </View>
 
-      {isFetching && <LoadingSpinner overlay />}
+      {isFetching && items.length > 0 && <LoadingSpinner overlay />}
 
       {visibility && (
         <SortingModel

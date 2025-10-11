@@ -67,7 +67,12 @@ export default function Wishlist() {
       {/* Header */}
       <View style={[s.header, {flexDirection: isRTL ? 'row-reverse' : 'row'}]}>
         <TouchableOpacity onPress={() => nav.goBack()} hitSlop={HITSLOP}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons
+            name="arrow-back"
+            size={22}
+            color={COLORS.text}
+            style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }}
+          />
         </TouchableOpacity>
 
         <View style={s.logoRow}>
@@ -132,6 +137,9 @@ function ProductCard({ item, isInCart, handleAddToCart, handleRemove }: { item: 
 
   const { isRTL } = useLanguage()
   console.log(item)
+  const fmt = (n: number) => n?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const to2 = (n: number) => Math.round((n ?? 0) * 100) / 100;
+
   return (
     <View style={[s.card, { width: CARD_W }]}>
       {/* Image block */}
@@ -160,27 +168,22 @@ function ProductCard({ item, isInCart, handleAddToCart, handleRemove }: { item: 
         <Text style={[s.rating, getCairoFont('800')]}>
           {item.product.rating?.toFixed(1) ?? '4.4'}
         </Text>
-        <Ionicons name="star" size={12} color={COLORS.green} />
+        <Ionicons name="star" size={12} color="#F59E0B" />
         <Text style={s.subtle}>({item.ratingCount ?? 0})</Text>
       </View>
 
       {/* Price line */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'baseline',
-          gap: 8,
-          marginTop: 6,
-        }}
-      >
-        <Text style={[s.price, getCairoFont('900')]}>
-          <DirhamLogo size={12} /> {item.product?.price}
+      <View style={s.priceLine}>
+        <Text style={[s.price, getCairoFont('900')]}> 
+          <DirhamLogo size={12} /> {fmt(to2(item.product?.price))}
         </Text>
-        {!!item.product.price && (
-          <Text style={s.oldPrice}>{item.product.price}</Text>
+        {!!item.product?.discount && (
+          <Text style={s.oldPrice}>{fmt(to2(item.product?.price))}</Text>
         )}
-        {!!item.product.discount && (
-          <Text style={[s.offPct, getCairoFont('900')]}>{item.product.discount.percentage} {t('off')}</Text>
+        {!!item.product?.discount && (
+          <Text style={[s.offPct, getCairoFont('900')]}>
+            {item.product.discount.percentage} {t('off')}
+          </Text>
         )}
       </View>
 
@@ -267,6 +270,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: Platform.select({ ios: 2, android: 8 }),
     paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.line,
   },
   logoRow: { flex: 1, marginLeft: 10 },
   logoTxt: { color: COLORS.text, fontSize: 20, textAlign: 'left', },
@@ -290,6 +295,8 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.line,
   },
   countTxt: { color: COLORS.text },
 
@@ -310,14 +317,22 @@ const s = StyleSheet.create({
     borderColor: COLORS.line,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
   card: {
     backgroundColor: COLORS.card,
     borderRadius: 12,
     padding: 10,
-    borderWidth: 1,
-    borderColor: '#EEF0F4',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   imgWrap: {
     height: 190, // larger like the screenshot
@@ -330,8 +345,9 @@ const s = StyleSheet.create({
 
   title: { color: COLORS.text, lineHeight: 18 },
 
-  rating: { color: COLORS.text, fontSize: 12, backgroundColor: COLORS.soft },
+  rating: { color: COLORS.text, fontSize: 12, backgroundColor: COLORS.soft, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
 
+  priceLine: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 6 },
   price: { color: COLORS.text },
   oldPrice: { color: COLORS.sub, textDecorationLine: 'line-through' },
   offPct: { color: COLORS.green, textTransform: 'uppercase' },
@@ -362,20 +378,24 @@ const s = StyleSheet.create({
 
   btnSolid: {
     flex: 1,
-    height: 34,
+    height: 36,
     backgroundColor: 'tomato',
-    borderRadius: 0,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   btnSolidTxt: { color: '#fff' },
 
   btnOutline: {
     flex: 1,
-    height: 34,
+    height: 36,
     borderWidth: 1.5,
     borderColor: 'tomato',
-    borderRadius: 0,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
@@ -383,14 +403,18 @@ const s = StyleSheet.create({
   btnOutlineTxt: { color: 'tomato' },
 
   moreBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: COLORS.line,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
   subtle: { color: COLORS.sub },

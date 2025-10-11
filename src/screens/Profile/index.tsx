@@ -8,6 +8,8 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 import { EditIcon } from '../../icons/EditICon';
 import { useAuth } from '../../AuthContext';
 import ModernButton from '../../components/Button';
@@ -32,6 +34,7 @@ const disabledButtonStyle = {
 
 const ProfileScreen = () => {
   const { user }: any = useAuth();
+  const nav = useNavigation<any>();
   const inputRef = useRef<TextInput>(null);
   const [userData, setUserData] = useState<any>(user.user);
   const [editingField, setEditingField] = useState<any>(null);
@@ -177,6 +180,14 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => nav.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ padding: 4 }}>
+          <Ionicons name="chevron-back" size={24} color="#272A32" />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, getCairoFont('700')]}>Profile Information</Text>
+        <View style={{ width: 24 }} />
+      </View>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         {loading && <LoadingSpinner overlay /> }
         {makeOTPVisible && <OTPModal makeOTPVisible={makeOTPVisible} setMakeOTPVisible={setMakeOTPVisible}/>}
@@ -218,6 +229,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F0F0FA',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerTitle: { fontSize: 18, color: '#272A32' },
   scrollViewContent: {
     padding: 16,
   },

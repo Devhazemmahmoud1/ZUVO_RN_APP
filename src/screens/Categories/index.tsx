@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   UIManager,
   Platform,
   ScrollView,
+  Pressable,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SearchIcon } from "../../icons/SearchIcon";
@@ -38,8 +40,41 @@ export default function Categories({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const { isRTL } = useLanguage()
 
+  // Animated rotation values for arrows per-category
+  const arrowAnims = useRef(new Map<string, Animated.Value>()).current;
+  const getArrow = (id: string) => {
+    if (!arrowAnims.has(id)) arrowAnims.set(id, new Animated.Value(0));
+    return arrowAnims.get(id)!;
+  };
+
+  const animateToggle = () => {
+    LayoutAnimation.configureNext({
+      duration: 220,
+      update: { type: LayoutAnimation.Types.easeInEaseOut },
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+    });
+  };
+
   const handleCategoryPress = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const currentlyOpen = selectedCategory;
+    // Animate list layout changes
+    animateToggle();
+    // Rotate arrows: close previous, open new
+    if (currentlyOpen && currentlyOpen !== id) {
+      Animated.timing(getArrow(currentlyOpen), {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    }
+    const willOpen = currentlyOpen !== id;
+    Animated.timing(getArrow(id), {
+      toValue: willOpen ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+
     setSelectedCategory(prev => (prev === id ? null : id));
   };
 
@@ -71,7 +106,7 @@ export default function Categories({ navigation }: any) {
       <View style={styles.searchContainer}>
         <SearchIcon size={20} color="#999" />
         <TextInput
-          placeholder="Search categories"
+          placeholder={t('search')}
           placeholderTextColor="#999"
           style={styles.searchInput}
         />
@@ -84,16 +119,16 @@ export default function Categories({ navigation }: any) {
         {categoriesData.map(item => (
           <View key={item.id} style={styles.categoryBlock}>
             {/* Category Row */}
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.categoryRow,
-                selectedCategory === item.id && { backgroundColor: "#F3F3F3" },
+                selectedCategory === item.id && styles.categoryRowActive,
               ]}
               onPress={() => handleCategoryPress(item.id)}
-              activeOpacity={0.8}
+              android_ripple={{ color: '#EAEAEA' }}
             >
               {/* <Image source={item.image} style={styles.categoryIcon} /> */}
-              <Text style={styles.categoryLabel}>{isRTL ? item.name_ar : item.name_en}</Text>
+              <Text style={[styles.categoryLabel, isRTL ? { textAlign: 'left' } : undefined]}>{isRTL ? item.name_ar : item.name_en}</Text>
               {/* <AntDesign
                 name={selectedCategory === item.id ? "up" : "down"}
                 size={18}
@@ -101,17 +136,30 @@ export default function Categories({ navigation }: any) {
                 style={{ marginLeft: "auto" }}
               /> */}
               <View style={{ flex: 1 }} /> 
-              <ArrowDownIcon color='#E0E0E0' size={22} /> 
-            </TouchableOpacity>
+              <Animated.View
+                style={{
+                  transform: [{
+                    rotate: getArrow(item.id).interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] })
+                  }]
+                }}
+              >
+                <ArrowDownIcon color='#A0A0A0' size={20} />
+              </Animated.View>
+            </Pressable>
 
             {/* Subcategories */}
             {selectedCategory === item.id && (
               <View style={styles.subcategoryContainer}>
                 {item.subCategories.map((sub, i) => (
-                  <TouchableOpacity key={i} style={styles.subcategoryRow} onPress={() => handleSelectSubCategory(sub)}>
+                  <Pressable
+                    key={i}
+                    style={[styles.subcategoryRow, i === item.subCategories.length - 1 ? { borderBottomWidth: 0 } : null]}
+                    onPress={() => handleSelectSubCategory(sub)}
+                    android_ripple={{ color: '#E3E3E3' }}
+                  >
                     {/* <Image source={sub.image} style={styles.subcategoryIcon} /> */}
-                    <Text style={styles.subcategoryText}>{isRTL ? sub.name_ar :sub.name_en}</Text>
-                  </TouchableOpacity>
+                    <Text style={[styles.subcategoryText, isRTL ? { textAlign: 'left' } : undefined]}>{isRTL ? sub.name_ar :sub.name_en}</Text>
+                  </Pressable>
                 ))}
               </View>
             )}
@@ -132,11 +180,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
     paddingHorizontal: 10,
     marginBottom: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   searchInput: {
     flex: 1,
@@ -160,12 +212,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // justifyContent: 'space-between',
     paddingVertical: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
+  categoryRowActive: { backgroundColor: '#F8FAFC' },
   categoryIcon: {
     width: 28,
     height: 28,
@@ -178,19 +235,19 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   subcategoryContainer: {
-    backgroundColor: "#F8F8F8",
+    backgroundColor: "#F8F9FB",
     marginTop: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#E5E7EB",
   },
   subcategoryRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E5E7EB",
   },
   subcategoryText: {
     fontSize: 14,

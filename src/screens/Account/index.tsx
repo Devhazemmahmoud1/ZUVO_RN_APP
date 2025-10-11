@@ -161,7 +161,7 @@ export const Account = ({ route, navigation }) => {
               'chevron-forward',
               t('orders'),
               t('trackOrders'),
-              () => console.log('Pressed Profile'),
+              () => navigation.navigate('Orders'),
             )}
             {renderBox(
               <ProfileIcon size={24} color="tomato" />,
@@ -178,8 +178,8 @@ export const Account = ({ route, navigation }) => {
               </View>,
               'chevron-forward',
               t('returns'),
-              t('activeReturns', { count: 10 }),
-              () => console.log('Pressed Profile'),
+              t('trackYourReturns'),
+              () => navigation.navigate('Returns'),
             )}
             {renderBox(
               <HeartIcon size={24} color="tomato" />,
@@ -227,7 +227,7 @@ export const Account = ({ route, navigation }) => {
               t('paymentMethod'),
               getArrow(),
               false,
-              () => console.log('Pressed Profile'),
+              () => navigation.navigate('PaymentMethods'),
             )}
             {renderListItem(
               <EyeDottedIcon size={20} color="tomato" />,
@@ -244,7 +244,7 @@ export const Account = ({ route, navigation }) => {
 
               getArrow(),
               false,
-              () => console.log('Pressed Profile'),
+              () => navigation.navigate('Security'),
             )}
 
             {renderListItem(

@@ -2,13 +2,19 @@ import { Animated, StyleSheet, View } from 'react-native';
 import BannerCarousel from './component/BannerCarosuel';
 import HomeHeader from './component/Header';
 import CategoriesPager from './component/CategoryPager';
-import RecommendedForYou from './component/Recomended';
-import { useRef, useState } from 'react';
+import RecommendedForYou, { Product as RecommendedProduct } from './component/Recomended';
 import PerviouslyBrowsered from './component/PerviouslyBrowsered';
 import BestDealForYou from './component/BestDealsForYou';
-import { decodeVIN } from '../../ultis/carModelFinder';
 import ShopByBrand from '../ProductsList/components/ShopByBrand';
 import AddressSwitcher from './component/AddressesSwitcher';
+import HomeSkeleton from './component/HomeSkeleton';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useWishlist } from '../../apis/wishlistApi';
+import { useAddressContext } from '../../AddressProvider';
+import { useQuery } from '@tanstack/react-query';
+import { handleGetCategories } from '../../apis/handleGetCategories';
+import { useGetProducts } from '../../apis/getProducts';
+import { useLanguage } from '../../LanguageProvider';
 
 const banner1 = require('../../assets/banner_1.webp');
 const banner2 = require('../../assets/banner_2.webp');
@@ -45,7 +51,7 @@ export const CATEGORIES: any[] = [
   { id: '12', label: 'Gaming', icon: 'game-controller-outline' },
 ];
 
-export const RECOMMENDED: any[] = [
+export const RECOMMENDED: RecommendedProduct[] = [
   {
     id: 'p1',
     title: 'Apple iPhone 16 Pro Max 256GB...',
@@ -84,73 +90,161 @@ export const RECOMMENDED: any[] = [
   },
 ];
 
-// const HEADER_EXPANDED = 210;   // tweak to your taste
-// const HEADER_COLLAPSED = 120;  // how short it becomes
-
 const Home = () => {
-  const [openAddressSwitcher, setOpenAddressSwitcher] = useState<any>(false);
-
+  const [openAddressSwitcher, setOpenAddressSwitcher] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  console.log(decodeVIN('55SWF4KB9HU183537'));
+  const { isLoading: addressesLoading } = useAddressContext();
+  const { data: wishlist, isPending: wishlistPending } = useWishlist();
+  const { data: categoriesData, isPending: categoriesPending } = useQuery({
+    queryKey: ['home', 'categories'],
+    queryFn: handleGetCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: productsResponse, isPending: productsPending } = useGetProducts({
+    limit: 18,
+    sortBy: 'popular',
+  });
+  const { isRTL } = useLanguage();
 
-  const cancelModel = () => setOpenAddressSwitcher(false)
+  const products = useMemo(() => productsResponse?.data ?? [], [productsResponse]);
+
+  const mapProductToCard = useCallback(
+    (product: any): RecommendedProduct => {
+      const discountPct = product?.discount?.percentage ?? 0;
+      const title = isRTL
+        ? product?.name_ar ?? product?.name_en ?? product?.sku ?? 'Product'
+        : product?.name_en ?? product?.name_ar ?? product?.sku ?? 'Product';
+      const image = product?.images?.[0]?.url
+        ? { uri: product.images[0].url }
+        : undefined;
+      const priceAfterDiscount = product?.priceAfterDiscount ?? product?.price ?? 0;
+      const originalPrice = product?.priceAfterDiscount ? product?.price : undefined;
+
+      return {
+        id: String(product?.id ?? product?.productId ?? title),
+        title,
+        img: image,
+        rating: product?.review?.avg ?? 0,
+        ratingCount: product?.reviewCount ?? 0,
+        price: priceAfterDiscount,
+        oldPrice: originalPrice,
+        tagline: product?.vendor?.businessName ?? undefined,
+        bestSeller: discountPct >= 25,
+        express: Boolean(product?.freeDelivery),
+      };
+    },
+    [isRTL],
+  );
+
+  const recommendedItems = useMemo(() => {
+    if (!products.length) return RECOMMENDED;
+    const slice = products.slice(0, 6).map(mapProductToCard);
+    return slice.length ? slice : RECOMMENDED;
+  }, [mapProductToCard, products]);
+
+  const bestDealsItems = useMemo(() => {
+    if (!products.length) return RECOMMENDED;
+    const sorted = [...products].sort(
+      (a, b) => (b?.discount?.percentage ?? 0) - (a?.discount?.percentage ?? 0),
+    );
+    const slice = sorted.slice(0, 6).map(mapProductToCard);
+    return slice.length ? slice : RECOMMENDED;
+  }, [mapProductToCard, products]);
+
+  const previouslyBrowsedItems = useMemo(() => {
+    if (!products.length) return RECOMMENDED;
+    const sorted = [...products].sort((a, b) => {
+      const aDate = new Date(a?.updatedAt ?? a?.createdAt ?? 0).getTime();
+      const bDate = new Date(b?.updatedAt ?? b?.createdAt ?? 0).getTime();
+      return bDate - aDate;
+    });
+    const slice = sorted.slice(0, 6).map(mapProductToCard);
+    return slice.length ? slice : RECOMMENDED;
+  }, [mapProductToCard, products]);
+
+  const categoriesItems = useMemo(() => {
+    if (!Array.isArray(categoriesData) || categoriesData.length === 0) {
+      return CATEGORIES;
+    }
+
+    return categoriesData.slice(0, 8).map((cat: any) => ({
+      id: String(cat?.id ?? cat?.categoryId ?? Math.random()),
+      label: isRTL
+        ? cat?.name_ar ?? cat?.name_en ?? ''
+        : cat?.name_en ?? cat?.name_ar ?? '',
+      img: cat?.image,
+    }));
+  }, [categoriesData, isRTL]);
+
+  const wishlistCount = wishlist?.count ?? 0;
+  const showSkeleton = wishlistPending || addressesLoading || categoriesPending || productsPending;
+
+  const cancelModel = () => setOpenAddressSwitcher(false);
 
   return (
     <View style={styles.screen}>
-      <HomeHeader
-        setOpenAddressSwitcher={setOpenAddressSwitcher}
-      />
-      {/* Scrollable content */}
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }, // we animate transforms/opacity on the header
-        )}
-      >
-        <View style={styles.section}>
-          <BannerCarousel data={BANNERS} />
-        </View>
-
-        <View style={styles.section}>
-          <ShopByBrand />
-        </View>
-        <View style={styles.section}>
-          <CategoriesPager items={CATEGORIES} />
-        </View>
-
-        <View style={styles.section}>
-          <RecommendedForYou
-            items={RECOMMENDED}
-            onPressProduct={p => console.log('open', p.id)}
-            onToggleWishlist={p => console.log('heart', p.id)}
-            onMore={p => console.log('more', p.id)}
+      {showSkeleton ? (
+        <HomeSkeleton />
+      ) : (
+        <>
+          <HomeHeader
+            setOpenAddressSwitcher={setOpenAddressSwitcher}
+            wishlistCount={wishlistCount}
           />
-        </View>
 
-        <View style={styles.section}>
-          <PerviouslyBrowsered
-            items={RECOMMENDED}
-            onPressProduct={p => console.log('open', p.id)}
-            onToggleWishlist={p => console.log('heart', p.id)}
-            onMore={p => console.log('more', p.id)}
-          />
-        </View>
+          <Animated.ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            scrollEventThrottle={16}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true },
+            )}
+          >
+            <View style={styles.section}>
+              <BannerCarousel data={BANNERS} />
+            </View>
 
-        <View style={styles.section}>
-          <BestDealForYou
-            items={RECOMMENDED}
-            onPressProduct={p => console.log('open', p.id)}
-            onToggleWishlist={p => console.log('heart', p.id)}
-            onMore={p => console.log('more', p.id)}
-          />
-        </View>
-      </Animated.ScrollView>
+            <View style={styles.section}>
+              <ShopByBrand />
+            </View>
 
-      <AddressSwitcher openAddressSwitcher={openAddressSwitcher} cancel={cancelModel}/>
+            <View style={styles.section}>
+              <CategoriesPager items={categoriesItems} />
+            </View>
+
+            <View style={styles.section}>
+              <RecommendedForYou
+                items={recommendedItems}
+                onPressProduct={p => console.log('open', p.id)}
+                onToggleWishlist={p => console.log('heart', p.id)}
+                onMore={p => console.log('more', p.id)}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <PerviouslyBrowsered
+                items={previouslyBrowsedItems}
+                onPressProduct={p => console.log('open', p.id)}
+                onToggleWishlist={p => console.log('heart', p.id)}
+                onMore={p => console.log('more', p.id)}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <BestDealForYou
+                items={bestDealsItems}
+                onPressProduct={p => console.log('open', p.id)}
+                onToggleWishlist={p => console.log('heart', p.id)}
+                onMore={p => console.log('more', p.id)}
+              />
+            </View>
+          </Animated.ScrollView>
+        </>
+      )}
+
+      <AddressSwitcher openAddressSwitcher={openAddressSwitcher} cancel={cancelModel} />
     </View>
   );
 };
@@ -158,10 +252,10 @@ const Home = () => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F6F7FB',
   },
   scrollContent: {
-    paddingBottom: 24, // space below last section
+    paddingBottom: 24,
   },
   section: {
     marginTop: 16,

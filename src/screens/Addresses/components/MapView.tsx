@@ -1,5 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View, StyleSheet, Platform, PermissionsAndroid, TextInput, FlatList, TouchableHighlight } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Text,
+  TouchableOpacity,
+  View,
+  StyleSheet,
+  Platform,
+  PermissionsAndroid,
+  TextInput,
+  FlatList,
+  TouchableHighlight,
+  Image,
+} from 'react-native';
 import Modal from 'react-native-modal';
 import Geolocation from 'react-native-geolocation-service';
 import { getPlaceName } from '../../../ultis/getPlaceName';
@@ -9,24 +20,40 @@ import { fetchPlaceDetails } from '../../../ultis/fetchPlaceDetails';
 import { t } from 'i18next';
 import { useLanguage } from '../../../LanguageProvider';
 import { getCairoFont } from '../../../ultis/getFont';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import Pin from '../../../icons/Pin';
+
+const DEFAULT_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
 async function requestLocationPermission() {
   if (Platform.OS === 'android') {
     const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
     );
     return granted === PermissionsAndroid.RESULTS.GRANTED;
   }
   return true;
 }
 
-const MapsView = ({ mapVisible, onCancelMap, navigation, onOpenDetails, editMode = false, lnglat }: any) => {
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+const MapsView = ({
+  mapVisible,
+  onCancelMap,
+  navigation,
+  onOpenDetails,
+  editMode = false,
+  lnglat,
+}: any) => {
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const mapRef = useRef<any>(null);
   const [placeName, setPlaceName] = useState<string>('');
   const [loadingPlaceName, setLoadingPlaceName] = useState(false);
   const [autocompleteResults, setAutocompleteResults] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const { isRTL } = useLanguage()
+  const { isRTL } = useLanguage();
 
   useEffect(() => {
     if (mapVisible && editMode === false) {
@@ -38,22 +65,22 @@ const MapsView = ({ mapVisible, onCancelMap, navigation, onOpenDetails, editMode
         }
 
         Geolocation.getCurrentPosition(
-          (position) => {
+          position => {
             const { latitude, longitude } = position.coords;
             console.log('Current position:', position.coords);
             setLocation({ latitude, longitude });
           },
-          (error) => {
+          error => {
             console.log('Location error:', error);
           },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
         );
       })();
     } else if (editMode === true) {
-        setLocation({
-            latitude: lnglat.latitude,
-            longitude: lnglat.longitude,
-        })
+      setLocation({
+        latitude: lnglat.latitude,
+        longitude: lnglat.longitude,
+      });
     }
   }, [mapVisible, editMode, lnglat]);
 
@@ -61,50 +88,58 @@ const MapsView = ({ mapVisible, onCancelMap, navigation, onOpenDetails, editMode
     if (location?.latitude && location?.longitude) {
       setLoadingPlaceName(true);
       getPlaceName(location.latitude, location.longitude)
-        .then((name) => {
+        .then(name => {
           if (name) setPlaceName(name);
         })
         .finally(() => setLoadingPlaceName(false));
     }
   }, [location]);
 
-    // Handle text input changes for autocomplete
-    const onChangeText = async (text: string) => {
-        setPlaceName(text);
-        if (text.length > 2) {
-          const results = await fetchAutocompletePredictions(text);
-          setAutocompleteResults(results);
-          setShowDropdown(true);
-        } else {
-          setAutocompleteResults([]);
-          setShowDropdown(false);
-        }
-      };
-    
-      // When user selects a prediction
-      const onSelectPrediction = async (description: string, placeId: string) => {
-        setPlaceName(description);
-        setShowDropdown(false);
-        setAutocompleteResults([]);
-        // Optionally, you can call geocoding on the selected description here to get lat/lng
+  // Handle text input changes for autocomplete
+  const onChangeText = async (text: string) => {
+    setPlaceName(text);
+    if (text.length > 2) {
+      const results = await fetchAutocompletePredictions(text);
+      setAutocompleteResults(results);
+      setShowDropdown(true);
+    } else {
+      setAutocompleteResults([]);
+      setShowDropdown(false);
+    }
+  };
 
-        const details = await fetchPlaceDetails(placeId);
-        if (details) {
-          console.log(details)
-          const { lat, lng } = details.geometry.location;
-          setLocation({ latitude: lat, longitude: lng });
-          setPlaceName(details.formatted_address || description);
-        }
+  // When user selects a prediction
+  const onSelectPrediction = async (description: string, placeId: string) => {
+    setPlaceName(description);
+    setShowDropdown(false);
+    setAutocompleteResults([]);
+    // Optionally, you can call geocoding on the selected description here to get lat/lng
 
-      };
+    const details = await fetchPlaceDetails(placeId);
+    if (details) {
+      console.log(details);
+      const { lat, lng } = details.geometry.location;
+      setLocation({ latitude: lat, longitude: lng });
+      setPlaceName(details.formatted_address || description);
+      // Smoothly move/center the map to the new selection
+      mapRef.current?.animateToRegion?.(
+        {
+          latitude: lat,
+          longitude: lng,
+          ...DEFAULT_DELTA,
+        },
+        500,
+      );
+    }
+  };
 
-      const handleChooseAddress = () => {
-        onOpenDetails()
-        navigation.navigate('AddressDetails',{
-            address: placeName,
-            location: location,
-        })
-      }
+  const handleChooseAddress = () => {
+    onOpenDetails();
+    navigation.navigate('AddressDetails', {
+      address: placeName,
+      location: location,
+    });
+  };
 
   return (
     <Modal
@@ -124,14 +159,13 @@ const MapsView = ({ mapVisible, onCancelMap, navigation, onOpenDetails, editMode
         </View>
 
         <View style={styles.content}>
-        
-        <View style={styles.searchContainer}>
-            <LocationIcon color='tomato' />
+          <View style={styles.searchContainer}>
+            <LocationIcon color="tomato" />
             <TextInput
               style={styles.input}
               value={placeName}
               onChangeText={onChangeText}
-              placeholder="Search for a location"
+              placeholder="Search for location"
               editable={!loadingPlaceName}
             />
           </View>
@@ -141,12 +175,12 @@ const MapsView = ({ mapVisible, onCancelMap, navigation, onOpenDetails, editMode
               <FlatList
                 keyboardShouldPersistTaps="handled"
                 data={autocompleteResults}
-                keyExtractor={(item) => item.place_id}
+                keyExtractor={item => item.place_id}
                 renderItem={({ item }) => (
                   <TouchableHighlight
                     underlayColor="#eee"
                     onPress={() => {
-                        onSelectPrediction(item.description, item.place_id);
+                      onSelectPrediction(item.description, item.place_id);
                     }}
                   >
                     <Text style={styles.dropdownItem}>{item.description}</Text>
@@ -156,28 +190,74 @@ const MapsView = ({ mapVisible, onCancelMap, navigation, onOpenDetails, editMode
             </View>
           )}
 
-          {/* Uncomment and use your MapView here when ready */}
-          {/* <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            initialRegion={{
-              latitude: location?.latitude || 37.78825,
-              longitude: location?.longitude || -122.4324,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }}
-          >
-            <Marker coordinate={location} />
-          </MapView> */}
+          <View style={{ flex: 1 }}>
+            {location ? (
+              <MapView
+                ref={mapRef}
+                provider={PROVIDER_GOOGLE}
+                style={styles.map}
+                initialRegion={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  ...DEFAULT_DELTA,
+                }}
+                {...({
+                  zoomEnabled: !isDragging,
+                  zoomControlEnabled: !isDragging,
+                  scrollEnabled: !isDragging,
+                  rotateEnabled: !isDragging,
+                  pitchEnabled: !isDragging,
+                } as any)}
+                onPress={(e: any) => {
+                  const { latitude, longitude } = e.nativeEvent.coordinate;
+                  setLocation({ latitude, longitude });
+                  mapRef.current?.animateToRegion?.(
+                    { latitude, longitude, ...DEFAULT_DELTA },
+                    300,
+                  );
+                }}
+              >
+                <Marker
+                  coordinate={location}
+                  {...{ pinColor: 'tomato' }} // sets the default pin color
+                  draggable
+                  onDragStart={() => setIsDragging(true)}
+                  onDragEnd={({ nativeEvent: { coordinate } }) => {
+                    setIsDragging(false);
+                    setLocation(coordinate);
+                    mapRef.current?.animateToRegion?.(
+                      { ...coordinate, ...DEFAULT_DELTA },
+                      300,
+                    );
+                  }}
+                >
+                  <Pin size={35} />
+                </Marker>
+              </MapView>
+            ) : (
+              <View style={styles.mapFallback}>
+                <Text style={{ color: '#6B7280' }}>
+                  {t('getItToday') || 'Loading map...'}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
         <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.footerButton}
-              onPress={handleChooseAddress}
+          <TouchableOpacity
+            style={styles.footerButton}
+            onPress={handleChooseAddress}
+          >
+            <Text
+              style={[
+                styles.footerButtonText,
+                isRTL ? getCairoFont('800') : undefined,
+              ]}
             >
-              <Text style={[styles.footerButtonText, isRTL ? getCairoFont('800') : undefined ]}>{t('confirmAddress')}</Text>
-            </TouchableOpacity>
-          </View>
+              {t('confirmAddress')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
@@ -212,19 +292,29 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#F0F0FA',
-    paddingBottom: 100,
+    position: 'relative',
+    backgroundColor: '#FFFFFF',
+  },
+  map: { flex: 1 },
+  mapFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E5E7EB',
   },
   searchContainer: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    right: 16,
+    zIndex: 20,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#fff',
-    // borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
     paddingHorizontal: 10,
-    marginBottom: 5,
-    height: 50,
+    height: 48,
     backgroundColor: '#fff',
   },
   icon: {
@@ -237,12 +327,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   dropdown: {
-    maxHeight: 200,
+    position: 'absolute',
+    top: 64,
+    left: 16,
+    right: 16,
+    zIndex: 19,
+    maxHeight: 220,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
     backgroundColor: '#fff',
-    marginBottom: 10,
   },
   dropdownItem: {
     paddingVertical: 15,

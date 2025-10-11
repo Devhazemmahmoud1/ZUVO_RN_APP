@@ -7,7 +7,8 @@ import {
   View,
   ViewStyle,
   StyleSheet,
-  Image
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
 import { getCairoFont } from '../../../ultis/getFont';
 
@@ -19,8 +20,8 @@ const PER_PAGE = COLS * ROWS;
 type Category = {
   id: string;
   label: string;
-  img?: string;       // Ionicons name (optional)
-  bg?: string;         // circle bg
+  img?: ImageSourcePropType | string;
+  bg?: string;
 };
 
 type Props = {
@@ -49,17 +50,28 @@ export default function CategoriesPager({ items, onPressItem, style }: Props) {
     );
   };
 
-  const renderTile = (c: Category) => (
-    <TouchableOpacity key={c.id} style={[styles.tile]} onPress={() => onPressItem?.(c)} activeOpacity={0.8}>
-      <View style={[styles.circle, { backgroundColor: c.bg ?? '#EFE7FF' }]}>
-        <Image
-            source={require('../../../assets/main_logo.png')}
-            style={{ width: 40, height: 40, resizeMode: 'contain' }}
-        />
-      </View>
-      <Text style={[styles.tileLabel, getCairoFont('700')]} numberOfLines={1}>{c.label}</Text>
-    </TouchableOpacity>
-  );
+  const renderTile = (c: Category) => {
+    const source: ImageSourcePropType =
+      typeof c.img === 'string'
+        ? { uri: c.img }
+        : c.img ?? require('../../../assets/main_logo.png');
+
+    return (
+      <TouchableOpacity
+        key={c.id}
+        style={styles.tile}
+        onPress={() => onPressItem?.(c)}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.circle, { backgroundColor: c.bg ?? '#EFE7FF' }]}>
+          <Image source={source} style={styles.tileImage} resizeMode="contain" />
+        </View>
+        <Text style={[styles.tileLabel, getCairoFont('700')]} numberOfLines={1}>
+          {c.label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={style}>
@@ -102,6 +114,10 @@ const styles = StyleSheet.create({
     borderRadius: 31,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tileImage: {
+    width: 40,
+    height: 40,
   },
   tileLabel: {
     marginTop: 8,

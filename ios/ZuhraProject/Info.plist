@@ -20,8 +20,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-		<!-- <key>GMSApiKey</key>
-	<string>AIzaSyC2sPSPqlLgcegq13849hl7GT5cb8OSEvk</string> -->
+	<key>GMSApiKey</key>
+	<string>AIzaSyC2sPSPqlLgcegq13849hl7GT5cb8OSEvk</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 	<dict>
@@ -53,6 +53,8 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used to validate the delivery address.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We use your location to improve delivery and nearby features.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

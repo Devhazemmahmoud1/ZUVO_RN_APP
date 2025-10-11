@@ -19,6 +19,7 @@ import MapsView from '../Addresses/components/MapView';
 import { useAddAddress, useEditAddress } from '../../apis/addressApi';
 import { t } from 'i18next';
 import { useLanguage } from '../../LanguageProvider';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 // import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const AddressDetails = ({ route, navigation }: any) => {
@@ -148,7 +149,7 @@ const AddressDetails = ({ route, navigation }: any) => {
                 /* handle edit location */
               }}
             >
-              {/* <MapView
+              <MapView
               provider={PROVIDER_GOOGLE}
               style={styles.mapPreview}
               initialRegion={{
@@ -162,7 +163,7 @@ const AddressDetails = ({ route, navigation }: any) => {
               {location && (
                 <Marker coordinate={location} />
               )}
-            </MapView> */}
+            </MapView>
               <Pressable
                 style={styles.editOverlay}
                 onPress={() => handleEditMap()}

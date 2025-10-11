@@ -8,13 +8,15 @@ import React, {
   } from 'react';
   import AsyncStorage from '@react-native-async-storage/async-storage';
   
-  import {
-    useAddresses as useAddressesQuery,            // your query hook (returns Address[])
-    useConfirmDefaultAddress,
-    useAddAddress,
-    useEditAddress,
-    useDeleteAddress,
-  } from './apis/addressApi'; // <-- adjust path
+import {
+  useAddresses as useAddressesQuery,            // your query hook (returns Address[])
+  useConfirmDefaultAddress,
+  useAddAddress,
+  useEditAddress,
+  useDeleteAddress,
+} from './apis/addressApi'; // <-- adjust path
+import { getCurrentPosition } from './ultis/getCurrentLocation';
+import { getPlaceName } from './ultis/getPlaceName';
   
   // ---------------- Types ----------------
   export type Address = {
@@ -133,23 +135,24 @@ import React, {
   
     const refreshCurrentLocation = useCallback(async () => {
       try {
-        // TODO: replace with real permission + geolocation + reverse geocoding
-        const coords = { latitude: 25.2048, longitude: 55.2708 };
+        const coords = await getCurrentPosition();
+        const placeName = await getPlaceName(coords.lat, coords.lng);
+
         const addr: Address = {
-          id: undefined, // real reverse geocode usually doesn’t have your app id
-          address: 'Near your current location',
-          city: 'Dubai',
-          country: 'AE',
-          lat: coords.latitude,
-          lng: coords.longitude,
+          id: undefined,
+          address: placeName ?? 'Near your current location',
+          city: placeName ?? undefined,
+          country: undefined,
+          lat: coords.lat,
+          lng: coords.lng,
         };
+
         setCurrentLocationAddress(addr);
-  
-        // Auto-activate if the user has nothing saved at all
+
         if (!activeSelection && addresses.length === 0 && !defaultAddress) {
           setActiveSelection({ id: 'current_location' });
         }
-      } catch {
+      } catch (error) {
         setCurrentLocationAddress(null);
       }
     }, [activeSelection, addresses.length, defaultAddress, setActiveSelection]);

@@ -58,8 +58,6 @@ export default function WishlistRail({
   const { index } = useCartIndex();
   const { isRTL } = useLanguage();
 
-  console.log(items)
-
   return (
     <View style={s.wrap}>
       {/* Header */}

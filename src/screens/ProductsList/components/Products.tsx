@@ -66,8 +66,6 @@ export default function ProductCard({
 
   const images = item?.images?.length ? item.images : [1]; // keep FlatList alive even with 1 img
 
-  console.log('this is the items', item);
-
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (layout !== 'row') return;
     const slide = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
@@ -102,7 +100,6 @@ export default function ProductCard({
       return;
     }
 
-    console.log('should come here');
 
     addToCart(
       { productId: item.id, qty: 1 },
@@ -117,6 +114,8 @@ export default function ProductCard({
     );
   };
 
+  const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const to2 = (n: number) => Math.round(n * 100) / 100;
   const getPriceAfterDiscount = () =>
     item.price - (item.price * item.discount?.percentage) / 100;
 
@@ -147,7 +146,6 @@ export default function ProductCard({
               onScroll={onScroll}
               scrollEventThrottle={16}
               renderItem={item => {
-                console.log('this item', item)
                 return (
                   <Pressable
                     onPressIn={() => prefetchProduct(qc, (item.item.productId).toString())}
@@ -166,6 +164,12 @@ export default function ProductCard({
                 );
               }}
             />
+            {/* Out of stock badge overlay (row layout) */}
+            {item?.stock !== undefined && item.stock <= 0 && (
+              <View style={styles.oosBadge}>
+                <Text style={[styles.oosText, getCairoFont('800')]}>Out of stock</Text>
+              </View>
+            )}
             <TouchableOpacity
               onPress={handleWishList}
               style={styles.wishlistIcon}
@@ -222,20 +226,20 @@ export default function ProductCard({
 
             <View style={styles.rate}>
               <Text style={styles.rateText}>5.0</Text>
-              <StarIcon size={15} color="green" />
+              <StarIcon size={15} color="#F59E0B" />
               <Text style={styles.totalReview}>(10)</Text>
             </View>
 
             <View style={styles.priceContainer}>
               <Text style={styles.price}>
                 <DirhamLogo size={12} />{' '}
-                {item.discount?.percentage !== undefined
+                {fmt(to2(item.discount?.percentage !== undefined
                   ? getPriceAfterDiscount()
-                  : item.price}
+                  : item.price))}
               </Text>
               {!!item.discount && (
                 <Text style={styles.discount}>
-                  {item.discount?.percentage !== undefined && item.price}
+                  {item.discount?.percentage !== undefined && fmt(to2(item.price))}
                 </Text>
               )}
               <Text style={styles.discountRate}>
@@ -306,6 +310,12 @@ export default function ProductCard({
                 </Pressable>
               )}
             />
+            {/* Out of stock badge overlay (column layout) */}
+            {item?.stock !== undefined && item.stock <= 0 && (
+              <View style={styles.oosBadge}>
+                <Text style={[styles.oosText, getCairoFont('800')]}>Out of stock</Text>
+              </View>
+            )}
             <TouchableOpacity
               onPress={handleWishList}
               style={styles.wishlistIcon}
@@ -354,19 +364,19 @@ export default function ProductCard({
             </Text>
             <View style={styles.rate}>
               <Text style={styles.rateText}>4.7</Text>
-              <StarIcon size={15} color="green" />
+              <StarIcon size={15} color="#F59E0B" />
               <Text style={styles.totalReview}>(10)</Text>
             </View>
             <View style={styles.priceContainer}>
               <Text style={styles.price}>
                 <DirhamLogo size={12} />{' '}
-                {item.discount?.percentage !== undefined
+                {fmt(to2(item.discount?.percentage !== undefined
                   ? getPriceAfterDiscount()
-                  : item.price}
+                  : item.price))}
               </Text>
               {!!item.discount && (
                 <Text style={styles.discount}>
-                  {item.discount?.percentage !== undefined && item.price}
+                  {item.discount?.percentage !== undefined && fmt(to2(item.price))}
                 </Text>
               )}
               <Text style={styles.discountRate}>
@@ -478,6 +488,14 @@ const styles = StyleSheet.create({
     padding: 5,
     position: 'relative',
     height: 350,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   cardRow: {
     flexDirection: 'row',
@@ -491,6 +509,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: '#F7F7FA',
     padding: 15,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   wishlistIcon: {
     position: 'absolute',
@@ -546,9 +566,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#f0f0fa',
-    minWidth: 70,
-    width: 70,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   rateText: { fontSize: 12, fontWeight: '600' },
   totalReview: { fontSize: 12, color: '#888' },
@@ -565,9 +586,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 3,
-    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,99,71,0.08)',
   },
   freeD: { fontSize: 13, color: '#333', fontWeight: '500' },
   dotsContainer: {
@@ -595,7 +617,32 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginRight: 10,
   },
-  productImageColumn: { height: '100%' },
+  oosBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(243,244,246,0.95)', // soft gray
+    borderWidth: 1,
+    borderColor: '#EF4444', // red border
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    zIndex: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  oosText: {
+    color: '#EF4444', // red text
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  productImageColumn: { height: '100%', borderRadius: 12, overflow: 'hidden', backgroundColor: '#F7F7FA' },
   detailsContainerColumn: { flex: 1, justifyContent: 'space-between' },
   // loaderOverlay: {
   //   position: 'absolute',

@@ -20,6 +20,8 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   } ,
+  // if backend also sets httpOnly cookies, include them; harmless otherwise
+  withCredentials: true,
 });
 
 axiosInstance.defaults.headers.common['Content-Type'] = 'application/json';
@@ -29,52 +31,165 @@ const getAccessToken = async () => {
   return await AsyncStorage.getItem('accessToken');
 };
 
-// // Get refresh token from AsyncStorage
-// const getRefreshToken = async () => {
-//   return await AsyncStorage.getItem('refreshToken');
-// };
+// Get refresh token from AsyncStorage
+const getRefreshToken = async () => {
 
-// // Save new token
-// const saveAccessToken = async (token: string) => {
-//   await AsyncStorage.setItem('accessToken', token);
-// };
+  console.log('Storage tokens', await AsyncStorage.getAllKeys())
 
-// Function to refresh token
-// const refreshToken = async () => {
-//   console.log('refreshing token')
-//   const keys = await AsyncStorage.getAllKeys();
-//     const result = await AsyncStorage.multiGet(keys);
-//     console.log('resultssss', result)
-//   const refresh = await getRefreshToken();
-//   console.log('this is the refresh', refresh)
-//   try {
-//     const response = await axiosInstance.post(`/api/auth/refresh-tokens`, null, {
-//       headers: {
-//         refresh_token: refresh
-//       }
-//     });
+  return await AsyncStorage.getItem('refreshToken');
+};
 
-//     console.log('Responses', response)
+// Persist new tokens (and keep user object in sync if present)
+const saveTokens = async (accessToken: string, refreshToken?: string) => {
+  await AsyncStorage.setItem('accessToken', accessToken);
+  if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
 
-//     const newAccessToken = response.data.accessToken;
-//     await saveAccessToken(newAccessToken);
+  // Keep stored user payload in sync if it exists
+  try {
+    const raw = await AsyncStorage.getItem('user');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const next = {
+        ...parsed,
+        access_token: accessToken,
+        ...(refreshToken ? { refresh_token: refreshToken } : {}),
+      };
+      await AsyncStorage.setItem('user', JSON.stringify(next));
+    }
+  } catch {}
+};
 
-//     console.log(newAccessToken)
+// In-flight refresh coordination
+let isRefreshing = false;
+let refreshPromise: any = null;
+type QueueItem = { resolve: (token: string) => void; reject: (err: any) => void };
+const refreshQueue: QueueItem[] = [];
 
-//     return newAccessToken;
-//   } catch (err) {
-//     // Optional: log out the user
-//     await AsyncStorage.removeItem('accessToken');
-//     await AsyncStorage.removeItem('refreshToken');
-//     throw new Error('Session expired');
-//   }
-// };
+const processQueue = (error: any, token: string | null) => {
+  while (refreshQueue.length) {
+    const p = refreshQueue.shift()!;
+    if (error || !token) p.reject(error || new Error('No token'));
+    else p.resolve(token);
+  }
+};
+
+// Optional external auth failure hook (set by AuthContext)
+let onAuthFailed: null | (() => void) = null;
+export const setAuthFailedHandler = (cb: null | (() => void)) => {
+  onAuthFailed = cb;
+};
+
+// Call backend to refresh tokens
+const performTokenRefresh = async (): Promise<string | null> => {
+  const currentRefresh = await getRefreshToken();
+
+  console.log('current refresh', currentRefresh);
+
+  if (!currentRefresh) return null;
+
+  console.log('perform token passed')
+
+  try {
+    // Use bare axios to avoid interceptor recursion
+    let res;
+    try {
+      res = await axios.post(
+        `${BASE_URL}/refresh-token`,
+        null,
+        {
+          headers: {
+            'x-refresh-token': currentRefresh,
+            'refresh_token': currentRefresh,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+          withCredentials: true,
+        }
+      );
+    } catch (primaryErr) {
+      // Optional fallback if your API uses a different path
+      res = await axios.post(
+        `${BASE_URL}/api/auth/refresh-tokens`,
+        null,
+        {
+          headers: {
+            'x-refresh-token': currentRefresh,
+            'refresh_token': currentRefresh,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+          withCredentials: true,
+        }
+      );
+    }
+
+    const payload = res?.data ?? {};
+    // Support both snake_case and camelCase from backend
+    const newAccess: string | undefined = payload?.access_token || payload?.accessToken || payload?.data?.access_token || payload?.data?.accessToken;
+    const newRefresh: string | undefined = payload?.refresh_token || payload?.refreshToken || payload?.data?.refresh_token || payload?.data?.refreshToken;
+
+    console.log('this is the new AccessToken ----->',newAccess )
+
+    if (!newAccess) return null;
+
+    console.log('a', newAccess)
+    console.log('a', newRefresh)
+
+    await saveTokens(newAccess, newRefresh);
+
+    // Update defaults so subsequent requests pick up the new token
+    axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
+    return newAccess;
+  } catch (err) {
+    // Clear tokens on hard failure; app can redirect to login
+    await AsyncStorage.removeItem('accessToken');
+    await AsyncStorage.removeItem('refreshToken');
+    await AsyncStorage.removeItem('user');
+    try { onAuthFailed?.(); } catch {}
+    return null;
+  }
+};
 
 // Request interceptor to attach token
 axiosInstance.interceptors.request.use(
   async (config) => {
     const token = await getAccessToken(); 
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    console.log('this is token', token)
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      return config;
+    }
+
+    // If no access token but a refresh token exists, try pre-refresh before sending
+    const url = (config.url || '').toString();
+    const isRefreshCall = url.includes('/refresh-token') || url.includes('/api/auth/refresh-tokens');
+    const refreshTok = await getRefreshToken();
+    if (!isRefreshCall && refreshTok) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          refreshQueue.push({
+            resolve: (newToken: string) => {
+              config.headers = config.headers || {};
+              (config.headers as any).Authorization = `Bearer ${newToken}`;
+              resolve(config);
+            },
+            reject,
+          });
+        });
+      }
+
+      isRefreshing = true;
+      const newToken = await performTokenRefresh();
+      isRefreshing = false;
+      if (newToken) {
+        processQueue(null, newToken);
+        config.headers = config.headers || {};
+        (config.headers as any).Authorization = `Bearer ${newToken}`;
+      } else {
+        processQueue(new Error('Unable to refresh token'), null);
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -92,11 +207,66 @@ axiosInstance.interceptors.response.use(
     console.log("[HTTP] <-", res.status, axios.getUri(res.config), `${t}ms`);
     return res;
   },
-  (err) => {
-    const t = Date.now() - ((err.config as any)?._ts ?? Date.now());
-    try { console.log("[HTTP] xx", axios.getUri(err.config), `${t}ms`); } catch {}
-    console.log("[HTTP] error:", err?.message);
-    return Promise.reject(err);
+  async (error) => {
+    const { response, config } = error || {};
+    const status = response?.status;
+    const originalRequest = config || {};
+    const took = Date.now() - ((originalRequest as any)?._ts ?? Date.now());
+    try { console.log("[HTTP] xx", axios.getUri(originalRequest), `${took}ms`); } catch {}
+    console.log("[HTTP] error:", error?.message);
+
+    // If server says refresh is not allowed, clear and bail
+    if (status === 401 && response?.data?.require_refresh === false) {
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('user');
+      try { onAuthFailed?.(); } catch {}
+      return Promise.reject(error);
+    }
+
+    // Only handle 401 once per request
+    if (status === 401 && !(originalRequest as any)._retry) {
+      (originalRequest as any)._retry = true;
+
+      if (isRefreshing) {
+        // Queue and wait for the in-flight refresh to finish
+        return new Promise((resolve, reject) => {
+          refreshQueue.push({
+            resolve: (token: string) => {
+              (originalRequest.headers = originalRequest.headers || {});
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(axiosInstance(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
+
+      isRefreshing = true;
+      refreshPromise = performTokenRefresh();
+      const newToken = await refreshPromise;
+
+      console.log('this is the refreshing', newToken)
+
+      isRefreshing = false;
+      refreshPromise = null;
+
+      if (newToken) {
+        processQueue(null, newToken);
+        (originalRequest.headers = originalRequest.headers || {});
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return axiosInstance(originalRequest);
+      } else {
+        processQueue(new Error('Unable to refresh token'), null);
+        await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('user');
+        try { onAuthFailed?.(); } catch {}
+        return Promise.reject(error);
+      }
+    }
+
+    return Promise.reject(error);
   }
 );
 

@@ -1,3 +1,4 @@
+import { t } from "i18next";
 import React, { useRef } from "react";
 import { View, Text, StyleSheet, Animated, PanResponder, ViewStyle } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -126,7 +127,7 @@ export default function DragToConfirmFixed({
 
         {/* Label */}
         <Text pointerEvents="none" style={styles.label}>
-          {label}
+          {t(label)}
         </Text>
 
         {/* Drag surface covering the whole bar */}
@@ -151,7 +152,7 @@ export default function DragToConfirmFixed({
               : { left:  padding, transform: [{ translateX: txLTR }] },
           ]}
         >
-          <Ionicons name={arrowName} size={20} color="#fff" />
+          <Ionicons name={arrowName} size={20} color="tomato" />
         </Animated.View>
       </View>
     </View>
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     position: "absolute",
-    backgroundColor: "#2D6CB5",
+    backgroundColor: "#fff",
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",

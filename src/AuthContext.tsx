@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { handleGoogleSignIn } from '../src/apis/handleGoogleSignIn';
+import { setAuthFailedHandler } from './ultis/axiosInstance';
 
 export type AuthUser = {
   name: string;
@@ -39,6 +40,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     loadUser();
+    // Subscribe to auth failures coming from axios (e.g., refresh failed)
+    setAuthFailedHandler(() => {
+      setUser(null);
+    });
+    return () => setAuthFailedHandler(null);
   }, []);
 
   const login = async (userData: AuthUser) => {

@@ -121,12 +121,13 @@ export default function App() {
     return () => sub.remove();
   });
 
+  //24 * 60 * 60 * 1000
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{
         persister: createAsyncStoragePersister({ storage: AsyncStorage }),
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 1000,
         buster: 'v1.0.3',
       }}
     >

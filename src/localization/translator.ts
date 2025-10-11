@@ -18,6 +18,7 @@ export const resources = {
         profileManage: 'Manage Profile',
         returns: 'Returns',
         activeReturns: '{{count}} Active requests',
+        trackYourReturns: 'Track your returns',
         wishListCount: '{{count}} Wish Products',
         myAddresses: 'My Addresses',
         myCart: 'My Cart',
@@ -151,7 +152,8 @@ export const resources = {
         orderSummary: 'Order Summary',
         itemsCount: '{{ count }} Items',
         extraCharges: "Extra charges may be applied",
-        cod: 'Cash On Delivery'
+        cod: 'Cash On Delivery',
+        slideToOrder: 'Slide To Order'
       },
     },
     ar: {
@@ -306,7 +308,9 @@ export const resources = {
         orderSummary: 'بيانات الطلب',
         itemsCount: '{{ count }} منتج',
         extraCharges: "سيتم اضافه بعض الرسوم",
-        cod: 'الدفع عند الاستلام'
+        cod: 'الدفع عند الاستلام',
+        slideToOrder: 'اتمام الطلب',
+        trackYourReturns: 'متابعه المرتجعات'
       },
     },
   } as const;

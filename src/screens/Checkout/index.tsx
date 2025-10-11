@@ -29,10 +29,8 @@ import { useAddReceiver, useGetReceivers } from '../../apis/checkoutApi';
 import LoadingSpinner from '../../components/Loading';
 import ReceiverModal from './components/AddReceiver';
 import { useCart } from '../../apis/cartApis';
-// import SlideToPay from './components/Slider';
-// import TapSlideConfirm from './components/TapToSlider';
-// import DragToConfirm from './components/DragToConfirm';
 import DragToConfirmFixed from './components/DragToConfirm';
+import { useMakeOrder } from '../../apis/orderApi';
 
 const { width: W } = Dimensions.get('window');
 
@@ -53,10 +51,14 @@ const CONTENT_W = W - 24 - 24;
 
 const SHIP_CARD_W = Math.min(CONTENT_W * 0.85, 200);
 
+const getReceiverId = (r: any) =>
+  String(r?.id ?? r?._id ?? r?.receiverId ?? '');
+
 export default function Checkout() {
   //   const [cvv, setCvv] = useState('');
   const [openReceiver, setOpenReceiver] = useState(false);
-  const [selectedReceiver, setSelectedReceiver] = useState(0);
+  // store receiver id as string to handle numeric or Mongo _id seamlessly
+  const [selectedReceiver, setSelectedReceiver] = useState<string | null>(null);
   const [leaveAtDoor, setLeaveAtDoor] = useState(false);
   const { effectiveAddress } = useAddressContext();
   const nav: any = useNavigation();
@@ -66,13 +68,21 @@ export default function Checkout() {
   const { data: cart, isPending: fetchingCart } = useCart();
   const { data: receivers, isPending: fetching } = useGetReceivers();
   const { mutateAsync: addReceiver, isPending: Adding } = useAddReceiver();
+  const { mutateAsync: createOrder, isPending: creating } = useMakeOrder();
   const [selectedDate, setSelectedDate] = useState('tomorrow');
   const [selectedMethod, setSelectedMethod] = useState('cod');
-  //   const canContinue = cvv.length >= 3;
 
   const subtotal = cart.items.reduce((acc, item) => acc + item.lineTotal, 0);
   const shipping = 0;
   const total = useMemo(() => subtotal + shipping, [subtotal, shipping]);
+
+  // money formatting helpers (locale-aware, 2 decimals)
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  const to2 = (n: number) => Math.round(n * 100) / 100;
 
   const pinY = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -98,14 +108,43 @@ export default function Checkout() {
 
   const handleCloseModel = () => setOpenReceiver(false);
 
-  const handleAddReceiver = ({ name, phone }) => {
-    addReceiver(
+  const handleAddReceiver = async ({ name, phone }) => {
+    try {
+      const res: any = await addReceiver({ name, phone });
+      // Best effort: try to preselect the newly added receiver
+      const added = Array.isArray(res)
+        ? res[res.length - 1]
+        : Array.isArray(res?.data)
+          ? res.data[res.data.length - 1]
+          : res;
+      const rid = getReceiverId(added);
+      if (rid) setSelectedReceiver(rid);
+    } catch (e) {
+      // no-op; modal already closed by child
+    }
+  };
+
+  const handleCheckOut = () => {
+    createOrder(
       {
-        name,
-        phone,
+        deliveryAddress: effectiveAddress,
+        leaveAtDoor: leaveAtDoor,
+        deliveryDay: selectedDate,
+        receiver: selectedReceiver,
+        paymentMethod: selectedMethod,
       },
       {
-        onSuccess: () => {},
+        onSuccess: (data) => {
+          console.log(data) 
+          nav.navigate('OrderPlaced', {
+            addressLabel: 'Home',
+            address: data.shippingInfo.address.address,
+            shipmentNumber: 1,
+            estimatedLabel: 'Estimated delivery',
+            arrivingWhen: (data.shippingInfo.deliveryDate).toUpperCase(),
+            productImage: data.items[0].imageUrl, // placeholder square image
+          })
+        },
         onError: () => {},
       },
     );
@@ -114,7 +153,9 @@ export default function Checkout() {
   return (
     <SafeAreaView style={s.screen}>
       {/* Header */}
-      {(fetching || Adding || fetchingCart) && <LoadingSpinner overlay />}
+      {(/* fetching */ false || /* Adding */ false || fetchingCart || creating) && (
+        <LoadingSpinner overlay />
+      )}
       <View style={s.headerRow}>
         <TouchableOpacity
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -177,8 +218,6 @@ export default function Checkout() {
               </Text>
             </TouchableOpacity>
           </Card>
-
-          {/* ===== Who will receive ===== */}
           <Card
             title={t('whoWillReceive')}
             //   right={<Badge text="NEW" />}
@@ -187,22 +226,21 @@ export default function Checkout() {
             <View style={s.recipientRow}>
               {receivers !== undefined &&
                 Array.isArray(receivers) &&
-                receivers.map(res => (
-                  <SelectableChip
-                    key={res.id}
-                    selected={selectedReceiver == res.id ? true : false}
-                    onPress={() => {
-                      if (selectedReceiver == res.id) {
-                        setSelectedReceiver(0);
-                        return;
+                receivers.map((res: any) => {
+                  const id = getReceiverId(res);
+                  return (
+                    <SelectableChip
+                      key={id || res?.name}
+                      selected={selectedReceiver === id}
+                      onPress={() =>
+                        setSelectedReceiver(selectedReceiver === id ? null : id)
                       }
-                      setSelectedReceiver(res.id);
-                    }}
-                    text={res.name}
-                    sub={res.phone}
-                    style={s.half}
-                  />
-                ))}
+                      text={res.name}
+                      sub={res.phone}
+                      style={s.half}
+                    />
+                  );
+                })}
               <SelectableChip
                 onPress={() => setOpenReceiver(true)}
                 text={t('someoneElse')}
@@ -250,7 +288,7 @@ export default function Checkout() {
                       {isRTL ? item.name_ar : item.name_en}
                     </Text>
                     <Text style={[s.price, getCairoFont('800')]}>
-                      {item.lineTotal} <DirhamLogo size={12} />
+                      <DirhamLogo size={12} /> {fmt(to2(item.lineTotal))}
                     </Text>
                   </View>
                 </View>
@@ -416,7 +454,7 @@ export default function Checkout() {
                 </Text>
               </Text>
               <Text style={s.bold}>
-                <DirhamLogo size={12} /> {subtotal.toLocaleString()}
+                <DirhamLogo size={12} /> {fmt(to2(subtotal))}
               </Text>
             </Row>
             <Row style={{ justifyContent: 'space-between', marginTop: 10 }}>
@@ -432,9 +470,7 @@ export default function Checkout() {
               </Text>
               <Text style={[s.totalVal, getCairoFont('900')]}>
                 <DirhamLogo size={13} />{' '}
-                {selectedDate == 'today'
-                  ? (Number(total) + 30).toLocaleString()
-                  : total.toLocaleString()}
+                {fmt(to2(selectedDate == 'today' ? Number(total) + 30 : total))}
               </Text>
             </Row>
 
@@ -484,32 +520,29 @@ export default function Checkout() {
 
         {/* Sticky CVV bar + totals row */}
         <View style={s.sticky}>
-        <View style={s.sliderContainer}>
-        <DragToConfirmFixed
-            label={t('slideToOrder')}
-            travelPx={Math.min(Dimensions.get('window').width * 0.88, 360)} // responsive width
-            requireFullEnd
-            direction={isRTL ? 'rtl' : 'ltr'}   // <— key line
-            onComplete={() => {
-              console.log("Order confirmed");
-              // call your mutation here
-            }}
-          />
+          <View style={s.sliderContainer}>
+            <DragToConfirmFixed
+              key={`${selectedReceiver}|${leaveAtDoor}|${selectedDate}|${selectedMethod}`}
+              label={t('slideToOrder')}
+              travelPx={Math.min(Dimensions.get('window').width * 0.88, 360)} // responsive width
+              requireFullEnd
+              direction={isRTL ? 'rtl' : 'ltr'} // <— key line
+              onComplete={() => {
+                handleCheckOut();
+              }}
+            />
 
-
-          <Row style={s.footerTotals}>
-            <Text style={[s.muted, getCairoFont('700')]}>
-              {t('itemsCount', {
-                count: cart.items.length,
-              })}
-            </Text>
-            <Text style={[s.footerTotal, getCairoFont('900')]}>
-              <DirhamLogo size={12} />{' '}
-              {selectedDate == 'today'
-                ? (Number(total) + 30).toLocaleString()
-                : total.toLocaleString()}
-            </Text>
-          </Row>
+            <Row style={s.footerTotals}>
+              <Text style={[s.muted, getCairoFont('700')]}>
+                {t('itemsCount', {
+                  count: cart.items.length,
+                })}
+              </Text>
+              <Text style={[s.footerTotal, getCairoFont('900')]}>
+                <DirhamLogo size={12} />{' '}
+                {fmt(to2(selectedDate == 'today' ? Number(total) + 30 : total))}
+              </Text>
+            </Row>
           </View>
         </View>
       </View>
@@ -895,9 +928,9 @@ function RadioRow({
 /* ---------- Styles ---------- */
 const s = StyleSheet.create({
   sliderContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
     marginBottom: 10, // spacing above totals
   },
   screen: { flex: 1, backgroundColor: COLORS.bg },
@@ -911,6 +944,8 @@ const s = StyleSheet.create({
     paddingTop: Platform.select({ ios: 2, android: 8 }),
     paddingBottom: 10,
     backgroundColor: '#fff',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E7EB',
   },
   headerTitle: {
     flex: 1,
@@ -929,6 +964,8 @@ const s = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
   },
   cardTint: { backgroundColor: '#FFF9FB' },
   cardTitle: { fontSize: 16, color: COLORS.text },
@@ -1242,6 +1279,11 @@ const s = StyleSheet.create({
     width: SHIP_CARD_W,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
   },
   thumbImg: { width: '100%', height: '100%' },
   track: {
@@ -1279,6 +1321,10 @@ const s = StyleSheet.create({
     borderTopColor: '#E5E7EB',
     zIndex: 1050,
     elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
   },
 
   slider: {
