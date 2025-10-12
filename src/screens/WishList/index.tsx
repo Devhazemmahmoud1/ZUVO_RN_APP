@@ -61,7 +61,7 @@ export default function Wishlist() {
   console.log(index);
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={[s.screen, Platform.OS === 'android' ? { marginTop: (StatusBar.currentHeight ?? 24) } : null]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {(adding || removing) && <LoadingSpinner overlay />}
       {/* Header */}

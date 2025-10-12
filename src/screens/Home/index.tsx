@@ -1,4 +1,4 @@
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View, ActivityIndicator, Platform } from 'react-native';
 import BannerCarousel from './component/BannerCarosuel';
 import HomeHeader from './component/Header';
 import CategoriesPager from './component/CategoryPager';
@@ -180,11 +180,34 @@ const Home = () => {
   const wishlistCount = wishlist?.count ?? 0;
   const showSkeleton = wishlistPending || addressesLoading || categoriesPending || productsPending;
 
+  // Android: show plain white overlay with tomato spinner that fades out on data ready
+  const isAndroid = Platform.OS === 'android';
+  const [overlayVisible, setOverlayVisible] = useState<boolean>(isAndroid && showSkeleton);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
+
+  if (isAndroid) {
+    if (showSkeleton && !overlayVisible) {
+      // data loading started again; show overlay immediately
+      setOverlayVisible(true);
+      overlayOpacity.setValue(1);
+    }
+  }
+
+  // When loading finishes on Android, fade the overlay out smoothly
+  if (isAndroid && overlayVisible && !showSkeleton) {
+    Animated.timing(overlayOpacity, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => setOverlayVisible(false));
+  }
+
   const cancelModel = () => setOpenAddressSwitcher(false);
 
   return (
     <View style={styles.screen}>
-      {showSkeleton ? (
+      {/* iOS keeps skeleton; Android shows spinner overlay */}
+      {showSkeleton && !isAndroid ? (
         <HomeSkeleton />
       ) : (
         <>
@@ -244,6 +267,12 @@ const Home = () => {
         </>
       )}
 
+      {isAndroid && overlayVisible && (
+        <Animated.View style={[styles.androidOverlay, { opacity: overlayOpacity }] } pointerEvents="none">
+          <ActivityIndicator size="large" color="tomato" />
+        </Animated.View>
+      )}
+
       <AddressSwitcher openAddressSwitcher={openAddressSwitcher} cancel={cancelModel} />
     </View>
   );
@@ -259,6 +288,13 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 16,
+  },
+  androidOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
 });
 

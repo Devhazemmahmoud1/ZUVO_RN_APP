@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { handleGoogleSignIn } from '../src/apis/handleGoogleSignIn';
 import { setAuthFailedHandler } from './ultis/axiosInstance';
+import { statusCodes } from '@react-native-google-signin/google-signin';
 
 export type AuthUser = {
   name: string;
@@ -31,6 +32,7 @@ export const useAuth = () => useContext(AuthContext)!;
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const signingInRef = useRef(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -55,8 +57,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loginWithGoogle = async () => {
+    // if (signingInRef.current) return false; // prevent re-entry
+    // signingInRef.current = true;
     try {
-      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const userInfo: any = await GoogleSignin.signIn();
 
       if (userInfo.type !== 'cancelled') {
@@ -68,6 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     } catch (error) {
       console.error('Google Sign-In error:', error);
+      console.log(statusCodes)
       return false
     }
   };

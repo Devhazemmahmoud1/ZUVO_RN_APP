@@ -16,6 +16,7 @@ import ReturnIssuedScreen from '../screens/Returns/ReturnIssued';
 import ReturnSummaryScreen from '../screens/Returns/ReturnSummary';
 import RefundTrackScreen from '../screens/Returns/RefundTrack';
 import OrderSummaryScreen from '../screens/OrderSummary';
+import Authentication from '../screens/Authentication';
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +39,7 @@ export default function AccountStack() {
       <Stack.Screen name='ReturnSummary' component={ReturnSummaryScreen} />
       <Stack.Screen name='RefundTrack' component={RefundTrackScreen} />
       <Stack.Screen name='OrderSummary' component={OrderSummaryScreen} />
+      <Stack.Screen name='Authentication' component={Authentication} />
     </Stack.Navigator>
   );
 }

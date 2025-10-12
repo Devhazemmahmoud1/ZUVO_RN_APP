@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -10,6 +10,9 @@ import {
   Platform,
   Pressable,
   I18nManager,
+  ActivityIndicator,
+  Animated,
+  StatusBar,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getCairoFont } from '../../ultis/getFont';
@@ -118,7 +121,27 @@ export default function Cart() {
     (isWishlistPending && hasWishlistData) ||
     adding;
 
-  if (initialLoading) {
+  // Android-only: show a plain white overlay with tomato spinner that fades out when data is ready
+  const isAndroid = Platform.OS === 'android';
+  const [overlayVisible, setOverlayVisible] = useState<boolean>(isAndroid && initialLoading);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
+
+  if (isAndroid) {
+    if (initialLoading && !overlayVisible) {
+      setOverlayVisible(true);
+      overlayOpacity.setValue(1);
+    }
+    if (overlayVisible && !initialLoading) {
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => setOverlayVisible(false));
+    }
+  }
+
+  // iOS keeps the skeleton loader
+  if (!isAndroid && initialLoading) {
     return (
       <SafeAreaView style={s.screen}>
         <CartSkeleton />
@@ -127,7 +150,7 @@ export default function Cart() {
   }
 
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={[s.screen, Platform.OS === 'android' ? { marginTop: (StatusBar.currentHeight ?? 24) } : null]}>
       {/* ===== Header row ===== */}
       {overlayLoading && <LoadingSpinner overlay />}
       <View style={s.topRow}>
@@ -233,13 +256,15 @@ export default function Cart() {
 
         {/* Add more <CartItem/> as needed */}
 
-        <WishlistRail
-          title={t('fromYourWish')}
-          items={wishlist?.items ?? []}
-          onViewAll={() => navigation.navigate('WishList')}
-          onPressItem={it => console.log('open', it.id)}
-          onAddToCart={it => handleAddCart(it)}
-        />
+        {cartItems.length > 0 && (
+          <WishlistRail
+            title={t('fromYourWish')}
+            items={wishlist?.items ?? []}
+            onViewAll={() => navigation.navigate('WishList')}
+            onPressItem={it => console.log('open', it.id)}
+            onAddToCart={it => handleAddCart(it)}
+          />
+        )}
 
         {cartItems.length > 0 && (
         <View style={s.cartTotals}>
@@ -297,6 +322,12 @@ export default function Cart() {
         openAddressSwitcher={openAddressSwitcher}
         cancel={cancelModel}
       />
+
+      {isAndroid && overlayVisible && (
+        <Animated.View style={[s.androidOverlay, { opacity: overlayOpacity }]} pointerEvents="none">
+          <ActivityIndicator size="large" color={COLORS.main} />
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -317,7 +348,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.select({ ios: 6, android: 10 }),
+    paddingTop: Platform.select({ ios: 6, android: 10 + (Platform.OS === 'android' ? 18 : 0) }),
     paddingBottom: 8,
     justifyContent: 'space-between',
   },
@@ -573,5 +604,12 @@ const s = StyleSheet.create({
   },
   cartTotals: {
     marginTop: 20,
+  },
+  androidOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 20,
   },
 });

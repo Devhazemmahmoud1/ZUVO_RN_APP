@@ -8,6 +8,7 @@ import {
   FlatList,
   Dimensions,
   ImageSourcePropType,
+  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getCairoFont } from '../../../ultis/getFont';
@@ -58,13 +59,15 @@ export default function HeroTop({
     [images]
   );
 
-  // 1-second skeleton loader for hero images and thumbnails
-  const [imgLoading, setImgLoading] = React.useState(true);
+  // 1-second skeleton loader for iOS only (Android: no skeleton)
+  const useSkeleton = Platform.OS !== 'android';
+  const [imgLoading, setImgLoading] = React.useState(useSkeleton);
   React.useEffect(() => {
+    if (!useSkeleton) return; // skip skeleton on Android
     setImgLoading(true);
     const t = setTimeout(() => setImgLoading(false), 1000);
     return () => clearTimeout(t);
-  }, [dataImages]);
+  }, [dataImages, useSkeleton]);
 
   React.useEffect(() => {
     if (!dataImages.length) return;

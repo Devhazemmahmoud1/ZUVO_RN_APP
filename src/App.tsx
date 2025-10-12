@@ -2,9 +2,15 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, useAuth } from '../src/AuthContext';
 import AuthenticatedStack from '../src//AuthenticatedStack';
 import UnauthenticatedStack from '../src/UnauthenticatedStack';
-import { ActivityIndicator, Alert, AppState, Platform, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  AppState,
+  Platform,
+  View,
+} from 'react-native';
 import Orientation from 'react-native-orientation-locker';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { LoadingProvider } from './LoadingContext';
 import NetInfo from '@react-native-community/netinfo';
@@ -19,6 +25,7 @@ import { I18nextProvider } from 'react-i18next';
 import { LanguageProvider } from './LanguageProvider';
 import i18n from './localization/i18n';
 import { focusManager, onlineManager } from '@tanstack/react-query';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 function RootNavigation() {
   const { user, isLoading } = useAuth();
@@ -111,7 +118,7 @@ export default function App() {
   // }
 
   onlineManager.setEventListener(setOnline =>
-    NetInfo.addEventListener(state => setOnline(!!state.isConnected))
+    NetInfo.addEventListener(state => setOnline(!!state.isConnected)),
   );
 
   focusManager.setEventListener(handleFocus => {
@@ -123,30 +130,40 @@ export default function App() {
 
   //24 * 60 * 60 * 1000
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister: createAsyncStoragePersister({ storage: AsyncStorage }),
-        maxAge: 1000,
-        buster: 'v1.0.3',
-      }}
+    <StripeProvider
+      publishableKey={
+        'pk_test_51SGxhIAib28iaA9u4Uu0NZLnG7NRlL9eHf4RjgVheQpcItsShhGIXcSraLAC4a0O229Xi8pzhhp6nyYl2wRF9JEH00nwyTj1kd'
+      }
+      //merchantIdentifier={APPLE_MERCHANT_ID}     // required for Apple Pay
+      urlScheme={'zuvo'} // required for 3DS on Android/iOS
+      setReturnUrlSchemeOnAndroid // auto-register scheme on Android
+      // You can also set `threeDSecureUsage` options if you want custom behavior
     >
-      <I18nextProvider i18n={i18n}>
-        <LanguageProvider>
-          <AddressProvider>
-            <Toast position="top" topOffset={50} />
-            <LoadingProvider>
-              <AuthProvider>
-                <SortingProvider>
-                  <NavigationContainer>
-                    <RootNavigation />
-                  </NavigationContainer>
-                </SortingProvider>
-              </AuthProvider>
-            </LoadingProvider>
-          </AddressProvider>
-        </LanguageProvider>
-      </I18nextProvider>
-    </PersistQueryClientProvider>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: createAsyncStoragePersister({ storage: AsyncStorage }),
+          maxAge: 1000,
+          buster: 'v1.0.3',
+        }}
+      >
+        <I18nextProvider i18n={i18n}>
+          <LanguageProvider>
+            <AddressProvider>
+              <Toast position="top" topOffset={50} />
+              <LoadingProvider>
+                <AuthProvider>
+                  <SortingProvider>
+                    <NavigationContainer>
+                      <RootNavigation />
+                    </NavigationContainer>
+                  </SortingProvider>
+                </AuthProvider>
+              </LoadingProvider>
+            </AddressProvider>
+          </LanguageProvider>
+        </I18nextProvider>
+      </PersistQueryClientProvider>
+    </StripeProvider>
   );
 }

@@ -1,5 +1,5 @@
 // ProductsList.tsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   TextInput,
@@ -9,6 +9,10 @@ import {
   Text,
   FlatList,
   Dimensions,
+  ActivityIndicator,
+  Platform,
+  Animated,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ArrowLeftIcon from '../../icons/arrowBack';
@@ -90,6 +94,26 @@ export default function ProductsList({ route }) {
 
   const pageSize = params.limit ?? 20;
 
+  // Android-only plain overlay spinner that fades out when initial page is ready
+  const isAndroid = Platform.OS === 'android';
+  const initialLoading = isLoading && (!data || (data?.pages?.length ?? 0) === 0);
+  const [overlayVisible, setOverlayVisible] = useState<boolean>(isAndroid && initialLoading);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
+
+  if (isAndroid) {
+    if (initialLoading && !overlayVisible) {
+      setOverlayVisible(true);
+      overlayOpacity.setValue(1);
+    }
+    if (overlayVisible && !initialLoading) {
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => setOverlayVisible(false));
+    }
+  }
+
   const items = useMemo(
     () => (data?.pages ?? []).flatMap((p: any) => p?.data ?? []),
     [data],
@@ -103,7 +127,7 @@ export default function ProductsList({ route }) {
     setCurrentLayout(currentLayout === 'column' ? 'row' : 'column');
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, Platform.OS === 'android' ? { marginTop: (StatusBar.currentHeight ?? 24) } : null]}>
       {/* Top bar */}
       <View style={styles.container}>
         <TouchableOpacity
@@ -135,6 +159,12 @@ export default function ProductsList({ route }) {
           )}
         </TouchableOpacity>
       </View>
+
+      {isAndroid && overlayVisible && (
+        <Animated.View style={[styles.androidOverlay, { opacity: overlayOpacity }]} pointerEvents="none">
+          <ActivityIndicator size="large" color="tomato" />
+        </Animated.View>
+      )}
 
       <Text style={styles.sectionTitle}>
         {isRTL ? screenParams.subCategoryName_ar : screenParams.subCategoryName_en}{' '}
@@ -276,6 +306,13 @@ const styles = StyleSheet.create({
   },
   iconTextRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   bottomButtonText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  androidOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
   sectionTitle: {
     marginTop: 20,
     fontSize: 18,

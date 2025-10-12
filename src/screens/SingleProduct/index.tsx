@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getCairoFont } from '../../ultis/getFont';
@@ -251,8 +252,28 @@ export default function SingleProduct({ route }) {
   // const subtotal = useMemo(() => qty * unit, [qty, unit]);
 
   const isInitialLoading = (isPending || fetching) && !data?.data;
+  const isAndroid = Platform.OS === 'android';
 
-  if (isInitialLoading) {
+  // Android-only: white overlay with spinner that fades out when content is ready
+  const [overlayVisible, setOverlayVisible] = useState<boolean>(isAndroid && isInitialLoading);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!isAndroid) return;
+    if (isInitialLoading) {
+      setOverlayVisible(true);
+      overlayOpacity.setValue(1);
+    } else if (overlayVisible) {
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => setOverlayVisible(false));
+    }
+  }, [isAndroid, isInitialLoading, overlayVisible, overlayOpacity]);
+
+  // iOS keeps skeleton loader
+  if (!isAndroid && isInitialLoading) {
     return <SingleProductSkeleton />;
   }
 
@@ -598,6 +619,11 @@ export default function SingleProduct({ route }) {
           )}
         </View>
       </View>
+      {isAndroid && overlayVisible && (
+        <Animated.View style={[s.androidOverlay, { opacity: overlayOpacity }]} pointerEvents="none">
+          <ActivityIndicator size="large" color={COLORS.blue} />
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -1340,5 +1366,12 @@ const s = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 1,
+  },
+  androidOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 20,
   },
 });

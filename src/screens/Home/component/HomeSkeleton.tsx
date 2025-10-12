@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -9,10 +9,25 @@ const PRODUCT_CARD_WIDTH = (SCREEN_WIDTH - H_PADDING * 2 - CARD_GAP) / 2;
 const CATEGORY_TILE_WIDTH = (SCREEN_WIDTH - H_PADDING * 2) / 4;
 
 const HomeSkeleton = () => {
+  // Android can render SkeletonPlaceholder with darker tints by default.
+  // Provide explicit light colors to avoid black/grey artifacts on some devices.
+  const skelProps = Platform.select({
+    // On some Android GPUs the shimmer mask can render dark/black.
+    // Use safe light colors and keep animation but slower + right-to-left to reduce artifacts.
+    android: {
+      backgroundColor: '#DDE3EA',
+      highlightColor: '#EEF2F6',
+      speed: 1400,
+      direction: 'right',
+      enabled: true,
+    },
+    ios: {},
+    default: {},
+  });
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <SkeletonPlaceholder borderRadius={14}>
+        <SkeletonPlaceholder borderRadius={14} {...(skelProps as any)}>
           <SkeletonPlaceholder.Item width={180} height={18} marginTop={12} />
           <SkeletonPlaceholder.Item width={SCREEN_WIDTH - H_PADDING * 2} height={14} marginTop={12} />
           <SkeletonPlaceholder.Item
@@ -29,7 +44,7 @@ const HomeSkeleton = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <SkeletonPlaceholder borderRadius={16}>
+        <SkeletonPlaceholder borderRadius={16} {...(skelProps as any)}>
           <SkeletonPlaceholder.Item
             width={SCREEN_WIDTH - H_PADDING * 2}
             height={140}
@@ -37,7 +52,7 @@ const HomeSkeleton = () => {
           />
         </SkeletonPlaceholder>
 
-        <SkeletonPlaceholder borderRadius={16}>
+        <SkeletonPlaceholder borderRadius={16} {...(skelProps as any)}>
           <SkeletonPlaceholder.Item
             flexDirection="row"
             flexWrap="wrap"
@@ -60,11 +75,11 @@ const HomeSkeleton = () => {
 
         {[0, 1, 2].map(section => (
           <View key={section} style={styles.section}>
-            <SkeletonPlaceholder borderRadius={12}>
+            <SkeletonPlaceholder borderRadius={12} {...(skelProps as any)}>
               <SkeletonPlaceholder.Item width={160} height={18} />
             </SkeletonPlaceholder>
 
-            <SkeletonPlaceholder borderRadius={16}>
+            <SkeletonPlaceholder borderRadius={16} {...(skelProps as any)}>
               <SkeletonPlaceholder.Item flexDirection="row" marginTop={16}>
                 {Array.from({ length: 2 }).map((_, idx) => (
                   <SkeletonPlaceholder.Item
@@ -99,10 +114,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A5B8F',
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
+    overflow: 'hidden', // clip skeleton gradient to header bounds on Android
   },
-  scroll: {
-    flex: 1,
-  },
+scroll: { flex: 1, backgroundColor: '#fff' },  
   scrollContent: {
     paddingTop: 24,
     paddingHorizontal: H_PADDING,

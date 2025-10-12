@@ -6,6 +6,8 @@ import {
   ScrollView,
   Pressable,
   I18nManager,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useAuth } from '../../AuthContext';
 import ModernButton from '../../components/Button';
@@ -121,7 +123,7 @@ export const Account = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, Platform.OS === 'android' ? { marginTop: (StatusBar.currentHeight ?? 24) } : null]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.welcomeTextWrapper}>
           <Text style={styles.welcomeText}>

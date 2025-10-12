@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+} from 'react';
 import {
   SafeAreaView,
   View,
@@ -16,6 +22,8 @@ import {
   // PanResponder,
   // LayoutChangeEvent,
   Pressable,
+  StatusBar,
+  Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getCairoFont } from '../../ultis/getFont';
@@ -24,15 +32,27 @@ import { useAddressContext } from '../../AddressProvider';
 import AddressSwitcher from '../Home/component/AddressesSwitcher';
 import { t } from 'i18next';
 import { useLanguage } from '../../LanguageProvider';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { useAddReceiver, useGetReceivers } from '../../apis/checkoutApi';
 import LoadingSpinner from '../../components/Loading';
 import ReceiverModal from './components/AddReceiver';
 import { useCart } from '../../apis/cartApis';
 import DragToConfirmFixed from './components/DragToConfirm';
 import { useMakeOrder } from '../../apis/orderApi';
+import { apiRequest } from '../../ultis/api';
+import { useStripe } from '@stripe/stripe-react-native';
 
 const { width: W } = Dimensions.get('window');
+
+type StripeCard = {
+  id: string;
+  card?: {
+    brand?: string;
+    last4?: string;
+    exp_month?: number;
+    exp_year?: number;
+  };
+};
 
 const COLORS = {
   text: '#0F172A',
@@ -56,8 +76,10 @@ const getReceiverId = (r: any) =>
 
 export default function Checkout() {
   //   const [cvv, setCvv] = useState('');
+  const isFocused = useIsFocused();
   const [openReceiver, setOpenReceiver] = useState(false);
   // store receiver id as string to handle numeric or Mongo _id seamlessly
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [selectedReceiver, setSelectedReceiver] = useState<string | null>(null);
   const [leaveAtDoor, setLeaveAtDoor] = useState(false);
   const { effectiveAddress } = useAddressContext();
@@ -71,10 +93,13 @@ export default function Checkout() {
   const { mutateAsync: createOrder, isPending: creating } = useMakeOrder();
   const [selectedDate, setSelectedDate] = useState('tomorrow');
   const [selectedMethod, setSelectedMethod] = useState('cod');
-
+  const [cards, setCards] = useState<StripeCard[]>([]);
+  const [defaultPmId, setDefaultPmId] = useState<string | null>(null);
   const subtotal = cart.items.reduce((acc, item) => acc + item.lineTotal, 0);
   const shipping = 0;
   const total = useMemo(() => subtotal + shipping, [subtotal, shipping]);
+  const { handleNextAction } = useStripe();
+  const [paying, setPaying] = useState(false);
 
   // money formatting helpers (locale-aware, 2 decimals)
   const fmt = (n: number) =>
@@ -115,8 +140,8 @@ export default function Checkout() {
       const added = Array.isArray(res)
         ? res[res.length - 1]
         : Array.isArray(res?.data)
-          ? res.data[res.data.length - 1]
-          : res;
+        ? res.data[res.data.length - 1]
+        : res;
       const rid = getReceiverId(added);
       if (rid) setSelectedReceiver(rid);
     } catch (e) {
@@ -124,7 +149,18 @@ export default function Checkout() {
     }
   };
 
-  const handleCheckOut = () => {
+  const handleCheckOut = async () => {
+
+      if (selectedMethod === 'card') {
+    const result = await payWithCard();
+    if (!result.ok) return;
+    console.log('Payment success:', result.status ?? 'succeeded');
+  } else if (selectedMethod === 'apple') {
+    Alert.alert('Not implemented', 'Apple Pay will be added later.');
+    return;
+  }
+
+
     createOrder(
       {
         deliveryAddress: effectiveAddress,
@@ -134,29 +170,154 @@ export default function Checkout() {
         paymentMethod: selectedMethod,
       },
       {
-        onSuccess: (data) => {
-          console.log(data) 
+        onSuccess: data => {
+          console.log(data);
           nav.navigate('OrderPlaced', {
             addressLabel: 'Home',
             address: data.shippingInfo.address.address,
             shipmentNumber: 1,
             estimatedLabel: 'Estimated delivery',
-            arrivingWhen: (data.shippingInfo.deliveryDate).toUpperCase(),
+            arrivingWhen: data.shippingInfo.deliveryDate.toUpperCase(),
             productImage: data.items[0].imageUrl, // placeholder square image
-          })
+          });
         },
-        onError: () => {},
+        onError: err => {
+          console.log('Order error', err);
+          Alert.alert('Order failed', 'Please try again.');
+        },
       },
     );
   };
 
+  const api = useMemo(
+    () => ({
+      // list saved cards + default from your backend
+      loadPaymentMethods: () =>
+        apiRequest<{
+          paymentMethods: StripeCard[];
+          defaultPaymentMethod: string | null;
+        }>({
+          path: '/api/stripe/payment-methods',
+          method: 'get',
+        }),
+      createPaymentIntent: (p: {
+        amountMinor: number;
+        paymentMethodId: string;
+      }) =>
+        apiRequest<{ clientSecret: string; status: string }>({
+          path: '/api/stripe/payment-intent',
+          method: 'post',
+          body: {
+            amount: p.amountMinor,
+            paymentMethodId: p.paymentMethodId,
+          },
+        }),
+    }),
+
+    [],
+  );
+
+  const loadCards = useCallback(async () => {
+    try {
+      const data = await api.loadPaymentMethods();
+      setCards(data?.paymentMethods || []);
+      setDefaultPmId(data?.defaultPaymentMethod ?? null);
+    } catch {
+      Alert.alert('Error', 'Failed to load payment methods');
+    }
+  }, [api]);
+
+  useEffect(() => {
+    if (isFocused) loadCards();
+  }, [loadCards, isFocused]);
+
+  useEffect(() => {
+    if (defaultPmId) {
+      setSelectedMethod('card');
+      setSelectedCardId(defaultPmId);
+    }
+  }, [defaultPmId]);
+
+  const payWithCard = useCallback(async () => {
+  if (!selectedCardId) {
+    Alert.alert('Payment', 'Please select a card first.');
+    return { ok: false as const };
+  }
+
+  try {
+    setPaying(true);
+
+    const amountMinor = Math.round(
+      (selectedDate === 'today' ? Number(total) + 30 : total) * 100
+    );
+
+    // 1) Create & confirm the PI on the backend using the saved card
+    const { clientSecret, status: initialStatus } = await api.createPaymentIntent({
+      amountMinor,
+      paymentMethodId: selectedCardId,
+    });
+
+    // If server said "succeeded" or "processing", we’re done.
+    if (initialStatus === 'succeeded' || initialStatus === 'processing') {
+      console.log('PI initial status:', initialStatus);
+      return { ok: true as const, status: initialStatus };
+    }
+
+    // 2) If Stripe requires customer action (3DS), complete it on-device
+    if (initialStatus === 'requires_action' && clientSecret) {
+      const { paymentIntent, error } = await handleNextAction(clientSecret);
+      if (error) {
+        console.log('3DS / next-action error:', error);
+        console.log('error.message');
+        Alert.alert('Payment failed', 'Authentication failed.');
+        return { ok: false as const, error };
+      }
+      const finalStatus = paymentIntent?.status?.toLowerCase();
+      const ok = finalStatus === 'succeeded' || finalStatus === 'processing';
+      console.log('PI final status:', finalStatus);
+      if (!ok) {
+        console.log(paymentIntent?.status)
+        Alert.alert('Payment not completed');
+      }
+      return { ok, status: paymentIntent?.status };
+    }
+
+    // Any other status: treat as failure and surface info
+    console.log('Unexpected PI status:', initialStatus);
+    Alert.alert('Payment error', `Status: ${initialStatus}`);
+    return { ok: false as const, status: initialStatus };
+  } catch (e: any) {
+    console.log('payWithCard exception:', e?.message || e);
+    Alert.alert('Payment error', e?.message ?? 'Unexpected error.');
+    return { ok: false as const, error: e };
+  } finally {
+    setPaying(false);
+  }
+}, [api, handleNextAction, selectedCardId, selectedDate, total]);
+
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView
+      style={[
+        s.screen,
+        Platform.OS === 'android'
+          ? { marginTop: StatusBar.currentHeight ?? 24 }
+          : null,
+      ]}
+    >
       {/* Header */}
-      {(/* fetching */ false || /* Adding */ false || fetchingCart || creating) && (
-        <LoadingSpinner overlay />
-      )}
-      <View style={s.headerRow}>
+      {
+        /* fetching */ (false ||
+          /* Adding */ false ||
+          fetchingCart ||
+          creating ||
+          paying) && <LoadingSpinner overlay />
+      }
+      <View
+        style={[
+          s.headerRow,
+          Platform.OS === 'android' ? { paddingTop: 18 } : null,
+        ]}
+      >
         <TouchableOpacity
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           onPress={() => nav.goBack()}
@@ -342,56 +503,9 @@ export default function Checkout() {
 
           {/* ===== Pay With ===== */}
           <Card title="Pay With">
-            <Chip icon="logo-apple" label="Apple Pay" />
+            {/* <Chip icon="logo-apple" label="Apple Pay" /> */}
 
             {/* Card method box */}
-            <TouchableOpacity activeOpacity={0.9} style={s.payCardSel}>
-              <Row gap={10} style={{ alignItems: 'center' }}>
-                <TinyBadge text="CARD" />
-                <View>
-                  <Text style={[s.payTitle, getCairoFont('800')]}>
-                    Debit/Credit Card
-                  </Text>
-                  <Text style={s.muted}>
-                    Monthly installments plans available
-                  </Text>
-                </View>
-              </Row>
-
-              <View style={s.cardInner}>
-                <Row
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Row gap={10} style={{ alignItems: 'center' }}>
-                    <Ionicons name="checkmark" size={18} color={COLORS.blue} />
-                    <Text style={[s.visa, getCairoFont('800')]}>
-                      VISA **** 2594
-                    </Text>
-                    <Text style={[s.linkBlue, { fontSize: 12 }]}>
-                      Add/Change
-                    </Text>
-                  </Row>
-                  <View style={s.cvvBox}>
-                    <Text style={s.cvvText}>CVV</Text>
-                  </View>
-                </Row>
-
-                <Row gap={8} style={{ marginTop: 10, alignItems: 'center' }}>
-                  <Text style={s.muted}>
-                    Monthly installments starting from <DirhamLogo size={11} />{' '}
-                    320.96 per month
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={COLORS.sub}
-                  />
-                </Row>
-              </View>
-            </TouchableOpacity>
 
             {/* noon One CC */}
             {/* <TouchableOpacity activeOpacity={0.9} style={s.noonOne}>
@@ -429,15 +543,56 @@ export default function Checkout() {
               desc="Pay 4 interest free payments of Đ 962.88"
             /> */}
             <MethodRow
-              selected={selectedMethod === 'apple' ? true : false}
-              onPress={() => setSelectedMethod('apple')}
+              selected={selectedMethod === 'apple'}
+              onPress={() => {
+                setSelectedMethod('apple');
+                setSelectedCardId(null);
+              }}
               logo="logo-apple"
               name={'Apple Pay'}
               desc={''}
             />
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={s.payCardSel}
+              onPress={() => nav.navigate('PaymentMethods')}
+            >
+              <Row
+                gap={10}
+                style={{ alignItems: 'center' }}
+                onPress={() => nav.navigate('PaymentMethods')}
+              >
+                <TinyBadge text="Debit/Credit Card" />
+                <View>
+                  <Text style={[s.payTitle, getCairoFont('800')]}>
+                    Add Card
+                  </Text>
+                </View>
+              </Row>
+            </TouchableOpacity>
+
+            {cards &&
+              cards?.map(card => (
+                <MethodRow
+                  selected={
+                    selectedMethod === 'card' && selectedCardId === card.id
+                  }
+                  onPress={() => {
+                    setSelectedMethod('card');
+                    setSelectedCardId(card.id);
+                  }}
+                  logo="card-outline"
+                  name={`•••••••• ${card.card?.last4}`}
+                  desc={''}
+                />
+              ))}
+
             <MethodRow
-              selected={selectedMethod === 'cod' ? true : false}
-              onPress={() => setSelectedMethod('cod')}
+              selected={selectedMethod === 'cod'}
+              onPress={() => {
+                setSelectedMethod('cod');
+                setSelectedCardId(null);
+              }}
               logo="cash-outline"
               name={t('cod')}
               desc={t('extraCharges')}
@@ -760,7 +915,7 @@ function MethodRow({
   return (
     <Pressable
       style={[s.methodRow, selected ? s.methodRowActive : undefined]}
-      onPress={() => console.log('this is pressed')}
+      onPress={onPress}
     >
       <Row gap={10} style={{ alignItems: 'center' }} onPress={onPress}>
         <View style={s.logoBox}>

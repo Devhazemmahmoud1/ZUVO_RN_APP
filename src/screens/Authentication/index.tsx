@@ -12,12 +12,35 @@ import { LoginView } from './components/LoginView';
 import { RegisterView } from './components/RegisterView';
 import { useAuth } from '../../AuthContext';
 
-export default function AuthScreen({ navigation }: any) {
+export default function AuthScreen({ navigation, route }: any) {
   const [isLogin, setIsLogin] = useState(true);
 
   const { loginWithGoogle, user } = useAuth();
 
-  console.log(navigation, user)
+  // If already authenticated, kick the user back to the intended screen or Home
+  React.useEffect(() => {
+    if (!user) return;
+    const target = route?.params?.redirectBack ?? route?.params?.params?.redirectBack;
+
+    // Prefer navigating to an explicit target if provided
+    if (target) {
+      try {
+        const parent = (navigation as any)?.getParent?.()?.getParent?.() || (navigation as any)?.getParent?.() || navigation;
+        parent?.navigate?.(target);
+        return;
+      } catch {}
+    }
+
+    // Otherwise go back if possible, else jump to Home tab
+    if (navigation?.canGoBack?.()) {
+      navigation.goBack();
+    } else {
+      try {
+        const parent = (navigation as any)?.getParent?.()?.getParent?.() || (navigation as any)?.getParent?.() || navigation;
+        parent?.navigate?.('Home');
+      } catch {}
+    }
+  }, [user, navigation, route]);
 
   return (
     <KeyboardAvoidingView
@@ -55,7 +78,7 @@ export default function AuthScreen({ navigation }: any) {
 
         
 
-        <TouchableOpacity style={styles.socialFaceBook}>
+        {/* <TouchableOpacity style={styles.socialFaceBook}>
           <View style={styles.socialMediaIconsWrapper}>
             <Image
               source={require('../../../src/assets/facebook.png')}
@@ -66,7 +89,7 @@ export default function AuthScreen({ navigation }: any) {
               Sign in with FaceBook
             </Text>
           </View>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity style={styles.socialApple}>
           <View style={styles.socialMediaIconsWrapper}>
@@ -87,6 +110,7 @@ export default function AuthScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
+    paddingTop: Platform.select({ android: 28, ios: 0 }),
     flexGrow: 1,
     backgroundColor: '#fff',
     // justifyContent: 'center',
