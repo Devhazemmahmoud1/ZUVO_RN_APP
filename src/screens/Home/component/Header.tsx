@@ -36,10 +36,10 @@ const TILE = 74;
 type Tile = { id: string; label: string; bg: string; fg?: string };
 const TILES: Tile[] = [
   { id: 'zuvo', label: 'Zuvo', bg: 'tomato', fg: '#fff' },
-  { id: 'mall', label: 'Cars', bg: '#F6F7FB', fg: '#3B3BE0' },
-  { id: 'food', label: 'Services', bg: '#FFFFFF', fg: '#111' },
-  { id: '15', label: 'B2B', bg: '#FFF3F3', fg: '#D93025' },
-  { id: 'now', label: 'Global', bg: '#FFFFFF', fg: '#111' },
+  { id: 'Cars', label: 'Cars', bg: '#F6F7FB', fg: '#3B3BE0' },
+  { id: 'Services', label: 'Services', bg: '#FFFFFF', fg: '#111' },
+  { id: 'B2B', label: 'B2B', bg: '#FFF3F3', fg: '#D93025' },
+  { id: 'Global', label: 'Global', bg: '#FFFFFF', fg: '#111' },
 ];
 
 // type Props = {
