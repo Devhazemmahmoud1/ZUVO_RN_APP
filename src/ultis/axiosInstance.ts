@@ -1,48 +1,29 @@
 // utils/axiosInstance.ts
-
-import axios from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import qs from 'qs'
+import qs from 'qs';
 import { Platform } from 'react-native';
 
-const BASE_URL = Platform.select({
-      ios: 'http://localhost:4000',   // iOS simulator -> Mac host
-      android: 'http://10.0.2.2:4000' // Android emulator -> Mac host
-})! // change this
+/**
+ * BASE_URL:
+ * - iOS simulator -> http://localhost:4000
+ * - Android emulator -> http://10.0.2.2:4000
+ * - Physical device: replace with your machine's LAN IP (e.g., http://192.168.1.10:4000)
+ */
+export const BASE_URL =
+  Platform.select({
+    ios: 'http://localhost:4000',
+    android: 'http://10.0.2.2:4000',
+  }) || 'http://10.0.2.2:4000';
 
-// Create the Axios instance
-const axiosInstance = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-  paramsSerializer: {
-    serialize: (params) => qs.stringify(params, { arrayFormat: "repeat" }),
-  },
-  headers: {
-    'Content-Type': 'application/json',
-  } ,
-  // if backend also sets httpOnly cookies, include them; harmless otherwise
-  withCredentials: true,
-});
-
-axiosInstance.defaults.headers.common['Content-Type'] = 'application/json';
-
-// Get token from AsyncStorage
-const getAccessToken = async () => {
-  return await AsyncStorage.getItem('accessToken');
-};
-
-// Get refresh token from AsyncStorage
-const getRefreshToken = async () => {
-
-  console.log('Storage tokens', await AsyncStorage.getAllKeys())
-
-  return await AsyncStorage.getItem('refreshToken');
-};
+// ---- Minimal helpers for storage ----
+const ACCESS_KEY = 'accessToken';
+const REFRESH_KEY = 'refreshToken';
 
 // Persist new tokens (and keep user object in sync if present)
 const saveTokens = async (accessToken: string, refreshToken?: string) => {
-  await AsyncStorage.setItem('accessToken', accessToken);
-  if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
+  await AsyncStorage.setItem(ACCESS_KEY, accessToken);
+  if (refreshToken) await AsyncStorage.setItem(REFRESH_KEY, refreshToken);
 
   // Keep stored user payload in sync if it exists
   try {
@@ -56,13 +37,62 @@ const saveTokens = async (accessToken: string, refreshToken?: string) => {
       };
       await AsyncStorage.setItem('user', JSON.stringify(next));
     }
-  } catch {}
+  } catch {
+    // ignore
+  }
 };
 
-// In-flight refresh coordination
+const clearTokens = async () => {
+  await AsyncStorage.multiRemove([ACCESS_KEY, REFRESH_KEY, 'user']);
+};
+
+const getAccessToken = async () => AsyncStorage.getItem(ACCESS_KEY);
+const getRefreshToken = async () => AsyncStorage.getItem(REFRESH_KEY);
+
+// Optional external hook (e.g., navigate to Login)
+let onAuthFailed: null | (() => void) = null;
+export const setAuthFailedHandler = (cb: null | (() => void)) => {
+  onAuthFailed = cb;
+};
+
+// ---- Axios instance ----
+const axiosInstance = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  paramsSerializer: {
+    serialize: params => qs.stringify(params, { arrayFormat: 'repeat' }),
+  },
+});
+
+// Bootstrap default Authorization header on app start
+(async () => {
+  const t = await getAccessToken();
+
+  const [access, refresh, user] = await Promise.all([
+  AsyncStorage.getItem('accessToken'),
+  AsyncStorage.getItem('refreshToken'),
+  AsyncStorage.getItem('user'),
+]);
+console.log('🔑 accessToken:', access);
+console.log('🔁 refreshToken:', refresh);
+console.log('👤 user:', user);
+
+
+  if (t) {
+    axiosInstance.defaults.headers.common.Authorization = `Bearer ${t}`;
+  }
+})();
+
+// ---- Refresh coordination (single in-flight refresh + queue) ----
 let isRefreshing = false;
-let refreshPromise: any = null;
-type QueueItem = { resolve: (token: string) => void; reject: (err: any) => void };
+type QueueItem = {
+  resolve: (token: string) => void;
+  reject: (err: any) => void;
+};
 const refreshQueue: QueueItem[] = [];
 
 const processQueue = (error: any, token: string | null) => {
@@ -73,168 +103,164 @@ const processQueue = (error: any, token: string | null) => {
   }
 };
 
-// Optional external auth failure hook (set by AuthContext)
-let onAuthFailed: null | (() => void) = null;
-export const setAuthFailedHandler = (cb: null | (() => void)) => {
-  onAuthFailed = cb;
+const isRefreshRequest = (config?: AxiosRequestConfig): boolean => {
+  const url = (config?.url || '').toString();
+  return (
+    url.includes('/refresh-token') || url.includes('/api/auth/refresh-tokens')
+  );
 };
 
-// Call backend to refresh tokens
+// Actually call the backend to rotate tokens
 const performTokenRefresh = async (): Promise<string | null> => {
+  console.log('time to refresh tokens')
   const currentRefresh = await getRefreshToken();
-
-  console.log('current refresh', currentRefresh);
-
   if (!currentRefresh) return null;
 
-  console.log('perform token passed')
-
   try {
-    // Use bare axios to avoid interceptor recursion
-    let res;
-    try {
-      res = await axios.post(
-        `${BASE_URL}/refresh-token`,
-        null,
-        {
-          headers: {
-            'x-refresh-token': currentRefresh,
-            'refresh_token': currentRefresh,
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-          withCredentials: true,
-        }
-      );
-    } catch (primaryErr) {
-      // Optional fallback if your API uses a different path
-      res = await axios.post(
-        `${BASE_URL}/api/auth/refresh-tokens`,
-        null,
-        {
-          headers: {
-            'x-refresh-token': currentRefresh,
-            'refresh_token': currentRefresh,
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-          withCredentials: true,
-        }
-      );
-    }
+    // Primary refresh route
+    const res = await axios.post(
+      `${BASE_URL}/refresh-token`,
+      { refresh_token: currentRefresh }, // send in body (most robust)
+      {
+        headers: {
+          'x-refresh-token': currentRefresh, // also send as header (optional)
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+        withCredentials: true,
+      },
+    );
 
     const payload = res?.data ?? {};
-    // Support both snake_case and camelCase from backend
-    const newAccess: string | undefined = payload?.access_token || payload?.accessToken || payload?.data?.access_token || payload?.data?.accessToken;
-    const newRefresh: string | undefined = payload?.refresh_token || payload?.refreshToken || payload?.data?.refresh_token || payload?.data?.refreshToken;
+    const newAccess: string | undefined =
+      payload?.access_token ||
+      payload?.accessToken ||
+      payload?.data?.access_token ||
+      payload?.data?.accessToken;
 
-    console.log('this is the new AccessToken ----->',newAccess )
+    const newRefresh: string | undefined =
+      payload?.refresh_token ||
+      payload?.refreshToken ||
+      payload?.data?.refresh_token ||
+      payload?.data?.refreshToken;
 
     if (!newAccess) return null;
 
-    console.log('a', newAccess)
-    console.log('a', newRefresh)
-
     await saveTokens(newAccess, newRefresh);
-
-    // Update defaults so subsequent requests pick up the new token
+    // Make sure subsequent requests pick the new token
     axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
     return newAccess;
-  } catch (err) {
-    // Clear tokens on hard failure; app can redirect to login
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('refreshToken');
-    await AsyncStorage.removeItem('user');
-    try { onAuthFailed?.(); } catch {}
-    return null;
+  } catch (e1) {
+    // Optional fallback if API exposes a second path
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/api/auth/refresh-token`,
+        { refresh_token: currentRefresh },
+        {
+          headers: {
+            'x-refresh-token': currentRefresh,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+          withCredentials: true,
+        },
+      );
+
+      const payload = res?.data ?? {};
+      const newAccess: string | undefined =
+        payload?.access_token ||
+        payload?.accessToken ||
+        payload?.data?.access_token ||
+        payload?.data?.accessToken;
+
+      const newRefresh: string | undefined =
+        payload?.refresh_token ||
+        payload?.refreshToken ||
+        payload?.data?.refresh_token ||
+        payload?.data?.refreshToken;
+
+      if (!newAccess) return null;
+
+      await saveTokens(newAccess, newRefresh);
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
+      return newAccess;
+    } catch (e2) {
+      // Refresh itself failed → wipe tokens and notify
+      await clearTokens();
+      try {
+        onAuthFailed?.();
+      } catch {}
+      return null;
+    }
   }
 };
 
-// Request interceptor to attach token
+// ---- Interceptors ----
+
+// Add Authorization if we have it; no pre-refresh here
 axiosInstance.interceptors.request.use(
-  async (config) => {
-    const token = await getAccessToken(); 
-    console.log('this is token', token)
+  async config => {
+    const token = await getAccessToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      return config;
+      config.headers = config.headers ?? {};
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
-
-    // If no access token but a refresh token exists, try pre-refresh before sending
-    const url = (config.url || '').toString();
-    const isRefreshCall = url.includes('/refresh-token') || url.includes('/api/auth/refresh-tokens');
-    const refreshTok = await getRefreshToken();
-    if (!isRefreshCall && refreshTok) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          refreshQueue.push({
-            resolve: (newToken: string) => {
-              config.headers = config.headers || {};
-              (config.headers as any).Authorization = `Bearer ${newToken}`;
-              resolve(config);
-            },
-            reject,
-          });
-        });
-      }
-
-      isRefreshing = true;
-      const newToken = await performTokenRefresh();
-      isRefreshing = false;
-      if (newToken) {
-        processQueue(null, newToken);
-        config.headers = config.headers || {};
-        (config.headers as any).Authorization = `Bearer ${newToken}`;
-      } else {
-        processQueue(new Error('Unable to refresh token'), null);
-      }
-    }
-
+    // lightweight timing/debug flag
+    (config as any)._ts = Date.now();
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[HTTP] ->', axios.getUri(config));
+    } catch {}
     return config;
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error),
 );
 
-
-axiosInstance.interceptors.request.use((config) => {
-  (config as any)._ts = Date.now();
-  console.log("[HTTP] ->", axios.getUri(config));
-  return config;
-});
+// Single-path refresh on 401 responses
 axiosInstance.interceptors.response.use(
-  (res) => {
+  res => {
     const t = Date.now() - ((res.config as any)?._ts ?? Date.now());
-    console.log("[HTTP] <-", res.status, axios.getUri(res.config), `${t}ms`);
+    // eslint-disable-next-line no-console
+    console.log('[HTTP] <-', res.status, axios.getUri(res.config), `${t}ms`);
     return res;
   },
-  async (error) => {
+  async (error: AxiosError) => {
     const { response, config } = error || {};
     const status = response?.status;
-    const originalRequest = config || {};
-    const took = Date.now() - ((originalRequest as any)?._ts ?? Date.now());
-    try { console.log("[HTTP] xx", axios.getUri(originalRequest), `${took}ms`); } catch {}
-    console.log("[HTTP] error:", error?.message);
+    const originalRequest = (config || {}) as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
-    // If server says refresh is not allowed, clear and bail
-    if (status === 401 && response?.data?.require_refresh === false) {
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      await AsyncStorage.removeItem('user');
-      try { onAuthFailed?.(); } catch {}
+    const took = Date.now() - ((originalRequest as any)?._ts ?? Date.now());
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[HTTP] xx', axios.getUri(originalRequest), `${took}ms`);
+    } catch {}
+    // eslint-disable-next-line no-console
+    console.log('[HTTP] error:', error?.message);
+
+    // If this is the refresh call itself → hard fail, clear & bubble up
+    if (status === 401 && isRefreshRequest(originalRequest)) {
+      await clearTokens();
+      try {
+        onAuthFailed?.();
+      } catch {}
       return Promise.reject(error);
     }
 
-    // Only handle 401 once per request
-    if (status === 401 && !(originalRequest as any)._retry) {
-      (originalRequest as any)._retry = true;
+    // Only attempt refresh once per request
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
       if (isRefreshing) {
-        // Queue and wait for the in-flight refresh to finish
+        // Queue while a refresh is in-flight
         return new Promise((resolve, reject) => {
           refreshQueue.push({
-            resolve: (token: string) => {
-              (originalRequest.headers = originalRequest.headers || {});
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve: (newToken: string) => {
+              originalRequest.headers = originalRequest.headers || {};
+              (
+                originalRequest.headers as any
+              ).Authorization = `Bearer ${newToken}`;
               resolve(axiosInstance(originalRequest));
             },
             reject,
@@ -242,59 +268,26 @@ axiosInstance.interceptors.response.use(
         });
       }
 
+      // Start a new refresh
       isRefreshing = true;
-      refreshPromise = performTokenRefresh();
-      const newToken = await refreshPromise;
-
-      console.log('this is the refreshing', newToken)
-
+      const newToken = await performTokenRefresh();
       isRefreshing = false;
-      refreshPromise = null;
 
       if (newToken) {
         processQueue(null, newToken);
-        (originalRequest.headers = originalRequest.headers || {});
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        originalRequest.headers = originalRequest.headers || {};
+        (originalRequest.headers as any).Authorization = `Bearer ${newToken}`;
         return axiosInstance(originalRequest);
       } else {
         processQueue(new Error('Unable to refresh token'), null);
-        await AsyncStorage.removeItem('accessToken');
-        await AsyncStorage.removeItem('refreshToken');
-        await AsyncStorage.removeItem('user');
-        try { onAuthFailed?.(); } catch {}
+        // Already cleared in performTokenRefresh on failure
         return Promise.reject(error);
       }
     }
 
+    // Not a 401 or already retried
     return Promise.reject(error);
-  }
+  },
 );
-
-// Response interceptor to handle 401
-// axiosInstance.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     console.log(error)
-//     console.log(error.message)
-//     const originalRequest = error.config;
-
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       console.log('this is unAuthorized')
-//       originalRequest._retry = true;
-
-//       try {
-//         const newToken = await refreshToken();
-//         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-//         const newReq = axiosInstance(originalRequest);
-//         console.log(newReq)
-//         return newReq;
-//       } catch (refreshError) {
-//         return Promise.reject(refreshError);
-//       }
-//     }
-
-//     return Promise.reject(error);
-//   }
-// );
 
 export default axiosInstance;

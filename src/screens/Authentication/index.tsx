@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import { LoginView } from './components/LoginView';
 import { RegisterView } from './components/RegisterView';
 import { useAuth } from '../../AuthContext';
@@ -25,8 +26,7 @@ export default function AuthScreen({ navigation, route }: any) {
     // Prefer navigating to an explicit target if provided
     if (target) {
       try {
-        const parent = (navigation as any)?.getParent?.()?.getParent?.() || (navigation as any)?.getParent?.() || navigation;
-        parent?.navigate?.(target);
+        navigation.dispatch(CommonActions.navigate(target));
         return;
       } catch {}
     }
@@ -36,8 +36,8 @@ export default function AuthScreen({ navigation, route }: any) {
       navigation.goBack();
     } else {
       try {
-        const parent = (navigation as any)?.getParent?.()?.getParent?.() || (navigation as any)?.getParent?.() || navigation;
-        parent?.navigate?.('Home');
+        navigation.dispatch(CommonActions.navigate('AppTabs'));
+        navigation.dispatch(CommonActions.navigate('Home'));
       } catch {}
     }
   }, [user, navigation, route]);
